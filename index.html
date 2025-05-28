@@ -7,16 +7,17 @@
     body { font-family: Arial; padding: 20px; }
     label, input { display: block; margin: 5px 0; }
     #timeline { height: 500px; margin-top: 30px; }
-    table { margin-top: 20px; }
+    button { margin-top: 10px; }
   </style>
 </head>
 <body>
-  <h2>Timeline งานเขียนแบบ (กรอกข้อมูลเอง)</h2>
+  <h2>Timeline งานเขียนแบบ (บันทึกไว้ในเครื่อง)</h2>
 
   <label>ชื่อโปรเจกต์: <input type="text" id="projectName"></label>
   <label>วันที่เริ่ม (YYYY-MM-DD): <input type="date" id="startDate"></label>
   <label>วันที่สิ้นสุด (YYYY-MM-DD): <input type="date" id="endDate"></label>
   <button onclick="addToTimeline()">เพิ่มงาน</button>
+  <button onclick="clearAll()">🗑️ ล้างข้อมูลทั้งหมด</button>
 
   <div id="timeline"></div>
 
@@ -25,6 +26,7 @@
     google.charts.setOnLoadCallback(initChart);
 
     let chart, dataTable;
+    let timelineData = [];
 
     function initChart() {
       const container = document.getElementById("timeline");
@@ -33,20 +35,33 @@
       dataTable.addColumn({ type: "string", id: "งาน" });
       dataTable.addColumn({ type: "date", id: "เริ่ม" });
       dataTable.addColumn({ type: "date", id: "สิ้นสุด" });
-      chart.draw(dataTable);
+
+      // โหลดข้อมูลจาก Local Storage
+      const saved = localStorage.getItem("timelineData");
+      if (saved) {
+        timelineData = JSON.parse(saved);
+        timelineData.forEach(row => {
+          dataTable.addRow([row[0], new Date(row[1]), new Date(row[2])]);
+        });
+        chart.draw(dataTable);
+      }
     }
 
     function addToTimeline() {
-      const name = document.getElementById("projectName").value;
-      const start = new Date(document.getElementById("startDate").value);
-      const end = new Date(document.getElementById("endDate").value);
+      const name = document.getElementById("projectName").value.trim();
+      const start = document.getElementById("startDate").value;
+      const end = document.getElementById("endDate").value;
 
-      if (!name || isNaN(start) || isNaN(end)) {
+      if (!name || !start || !end) {
         alert("กรุณากรอกข้อมูลให้ครบ");
         return;
       }
 
-      dataTable.addRow([name, start, end]);
+      const row = [name, start, end];
+      timelineData.push(row);
+      localStorage.setItem("timelineData", JSON.stringify(timelineData));
+
+      dataTable.addRow([name, new Date(start), new Date(end)]);
       chart.draw(dataTable);
       clearInputs();
     }
@@ -55,6 +70,13 @@
       document.getElementById("projectName").value = "";
       document.getElementById("startDate").value = "";
       document.getElementById("endDate").value = "";
+    }
+
+    function clearAll() {
+      if (confirm("คุณแน่ใจหรือไม่ว่าจะลบข้อมูลทั้งหมด?")) {
+        localStorage.removeItem("timelineData");
+        location.reload();
+      }
     }
   </script>
 </body>
