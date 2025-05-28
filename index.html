@@ -1,46 +1,61 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>AutoCAD Work Timeline</title>
-    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-    <script type="text/javascript">
-      google.charts.load('current', {'packages':['timeline']});
-      google.charts.setOnLoadCallback(drawChart);
+<head>
+  <title>Timeline งานเขียนแบบ</title>
+  <script src="https://www.gstatic.com/charts/loader.js"></script>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    label, input { display: block; margin: 5px 0; }
+    #timeline { height: 500px; margin-top: 30px; }
+    table { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>Timeline งานเขียนแบบ (กรอกข้อมูลเอง)</h2>
 
-      function drawChart() {
-        var container = document.getElementById('timeline');
-        var chart = new google.visualization.Timeline(container);
-        var dataTable = new google.visualization.DataTable();
+  <label>ชื่อโปรเจกต์: <input type="text" id="projectName"></label>
+  <label>วันที่เริ่ม (YYYY-MM-DD): <input type="date" id="startDate"></label>
+  <label>วันที่สิ้นสุด (YYYY-MM-DD): <input type="date" id="endDate"></label>
+  <button onclick="addToTimeline()">เพิ่มงาน</button>
 
-        dataTable.addColumn({ type: 'string', id: 'งาน' });
-        dataTable.addColumn({ type: 'date', id: 'เริ่ม' });
-        dataTable.addColumn({ type: 'date', id: 'สิ้นสุด' });
+  <div id="timeline"></div>
 
-        dataTable.addRows([
-          [ 'แบบโรงงาน A', new Date(2024, 9, 10), new Date(2024, 10, 25) ],
-          [ 'แบบท่อโรงงาน B', new Date(2024, 11, 1), new Date(2025, 0, 15) ],
-          [ 'แบบปรับปรุงคลัง C', new Date(2025, 1, 1), new Date(2025, 2, 10) ],
-          [ 'ระบบระบายอากาศ D', new Date(2025, 3, 5), new Date(2025, 5, 30) ]
-        ]);
+  <script>
+    google.charts.load("current", { packages: ["timeline"] });
+    google.charts.setOnLoadCallback(initChart);
 
-        chart.draw(dataTable);
+    let chart, dataTable;
+
+    function initChart() {
+      const container = document.getElementById("timeline");
+      chart = new google.visualization.Timeline(container);
+      dataTable = new google.visualization.DataTable();
+      dataTable.addColumn({ type: "string", id: "งาน" });
+      dataTable.addColumn({ type: "date", id: "เริ่ม" });
+      dataTable.addColumn({ type: "date", id: "สิ้นสุด" });
+      chart.draw(dataTable);
+    }
+
+    function addToTimeline() {
+      const name = document.getElementById("projectName").value;
+      const start = new Date(document.getElementById("startDate").value);
+      const end = new Date(document.getElementById("endDate").value);
+
+      if (!name || isNaN(start) || isNaN(end)) {
+        alert("กรุณากรอกข้อมูลให้ครบ");
+        return;
       }
-    </script>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        padding: 20px;
-      }
-      h2 {
-        text-align: center;
-      }
-      #timeline {
-        height: 400px;
-      }
-    </style>
-  </head>
-  <body>
-    <h2>Timeline งานเขียนแบบ AutoCAD (ต.ค. 67 - ต.ค. 68)</h2>
-    <div id="timeline"></div>
-  </body>
+
+      dataTable.addRow([name, start, end]);
+      chart.draw(dataTable);
+      clearInputs();
+    }
+
+    function clearInputs() {
+      document.getElementById("projectName").value = "";
+      document.getElementById("startDate").value = "";
+      document.getElementById("endDate").value = "";
+    }
+  </script>
+</body>
 </html>
