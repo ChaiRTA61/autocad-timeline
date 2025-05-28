@@ -4,20 +4,35 @@
   <title>Timeline งานเขียนแบบ</title>
   <script src="https://www.gstatic.com/charts/loader.js"></script>
   <style>
-    body { font-family: Arial; padding: 20px; }
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #formSection {
+      display: none;
+      position: fixed;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #f2f2f2;
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 1000;
+    }
     label, input { display: block; margin: 5px 0; }
     #timeline { height: 500px; margin-top: 30px; }
     button { margin-top: 10px; }
   </style>
 </head>
 <body>
-  <h2>Timeline งานเขียนแบบ (บันทึกไว้ในเครื่อง)</h2>
+  <h2>📅 Timeline งานเขียนแบบ</h2>
 
-  <label>ชื่อโปรเจกต์: <input type="text" id="projectName"></label>
-  <label>วันที่เริ่ม (YYYY-MM-DD): <input type="date" id="startDate"></label>
-  <label>วันที่สิ้นสุด (YYYY-MM-DD): <input type="date" id="endDate"></label>
-  <button onclick="addToTimeline()">เพิ่มงาน</button>
-  <button onclick="clearAll()">🗑️ ล้างข้อมูลทั้งหมด</button>
+  <div id="formSection">
+    <label>ชื่อโปรเจกต์: <input type="text" id="projectName"></label>
+    <label>วันที่เริ่ม: <input type="date" id="startDate"></label>
+    <label>วันที่สิ้นสุด: <input type="date" id="endDate"></label>
+    <button onclick="addToTimeline()">เพิ่มงาน</button>
+    <button onclick="closeForm()">ปิด</button>
+  </div>
 
   <div id="timeline"></div>
 
@@ -36,7 +51,6 @@
       dataTable.addColumn({ type: "date", id: "เริ่ม" });
       dataTable.addColumn({ type: "date", id: "สิ้นสุด" });
 
-      // โหลดข้อมูลจาก Local Storage
       const saved = localStorage.getItem("timelineData");
       if (saved) {
         timelineData = JSON.parse(saved);
@@ -57,13 +71,18 @@
         return;
       }
 
+      if (new Date(start) > new Date(end)) {
+        alert("วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด");
+        return;
+      }
+
       const row = [name, start, end];
       timelineData.push(row);
       localStorage.setItem("timelineData", JSON.stringify(timelineData));
-
       dataTable.addRow([name, new Date(start), new Date(end)]);
       chart.draw(dataTable);
       clearInputs();
+      closeForm();
     }
 
     function clearInputs() {
@@ -72,12 +91,14 @@
       document.getElementById("endDate").value = "";
     }
 
-    function clearAll() {
-      if (confirm("คุณแน่ใจหรือไม่ว่าจะลบข้อมูลทั้งหมด?")) {
-        localStorage.removeItem("timelineData");
-        location.reload();
-      }
+    function closeForm() {
+      document.getElementById("formSection").style.display = "none";
     }
+
+    // เมื่อคลิกที่ใดก็ได้บนหน้าจอ — เปิดฟอร์ม
+    document.addEventListener("click", function () {
+      document.getElementById("formSection").style.display = "block";
+    }, { once: true }); // เปิดครั้งเดียว
   </script>
 </body>
 </html>
