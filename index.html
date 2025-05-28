@@ -20,7 +20,15 @@
     }
     label, input { display: block; margin: 5px 0; }
     #timeline { height: 500px; margin-top: 30px; }
+    #taskList { margin-top: 20px; }
     button { margin-top: 10px; }
+    .task-item {
+      margin-bottom: 8px;
+      background: #f9f9f9;
+      padding: 5px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+    }
   </style>
 </head>
 <body>
@@ -35,6 +43,7 @@
   </div>
 
   <div id="timeline"></div>
+  <div id="taskList"></div>
 
   <script>
     google.charts.load("current", { packages: ["timeline"] });
@@ -54,11 +63,32 @@
       const saved = localStorage.getItem("timelineData");
       if (saved) {
         timelineData = JSON.parse(saved);
-        timelineData.forEach(row => {
-          dataTable.addRow([row[0], new Date(row[1]), new Date(row[2])]);
-        });
-        chart.draw(dataTable);
       }
+
+      drawChart();
+      renderTaskList();
+    }
+
+    function drawChart() {
+      dataTable.removeRows(0, dataTable.getNumberOfRows());
+      timelineData.forEach(row => {
+        dataTable.addRow([row[0], new Date(row[1]), new Date(row[2])]);
+      });
+      chart.draw(dataTable);
+    }
+
+    function renderTaskList() {
+      const container = document.getElementById("taskList");
+      container.innerHTML = "<h3>รายการงาน</h3>";
+      timelineData.forEach((row, index) => {
+        const div = document.createElement("div");
+        div.className = "task-item";
+        div.innerHTML = `
+          🛠️ ${row[0]} (${row[1]} ถึง ${row[2]})
+          <button onclick="deleteTask(${index})">🗑️ ลบ</button>
+        `;
+        container.appendChild(div);
+      });
     }
 
     function addToTimeline() {
@@ -79,10 +109,19 @@
       const row = [name, start, end];
       timelineData.push(row);
       localStorage.setItem("timelineData", JSON.stringify(timelineData));
-      dataTable.addRow([name, new Date(start), new Date(end)]);
-      chart.draw(dataTable);
+      drawChart();
+      renderTaskList();
       clearInputs();
       closeForm();
+    }
+
+    function deleteTask(index) {
+      if (confirm("ต้องการลบงานนี้ใช่หรือไม่?")) {
+        timelineData.splice(index, 1);
+        localStorage.setItem("timelineData", JSON.stringify(timelineData));
+        drawChart();
+        renderTaskList();
+      }
     }
 
     function clearInputs() {
@@ -95,10 +134,9 @@
       document.getElementById("formSection").style.display = "none";
     }
 
-    // เมื่อคลิกที่ใดก็ได้บนหน้าจอ — เปิดฟอร์ม
     document.addEventListener("click", function () {
       document.getElementById("formSection").style.display = "block";
-    }, { once: true }); // เปิดครั้งเดียว
+    }, { once: true });
   </script>
 </body>
 </html>
