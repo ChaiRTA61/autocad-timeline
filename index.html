@@ -94,13 +94,20 @@
 </div>
 
 <div>
-  <button onclick="triggerCSV()">📥 อัปโหลด CSV</button>
-  <input type="file" id="csvInput" accept=".csv" onchange="handleCSV(event)">
-  <button onclick="downloadCSV()">📤 ดาวน์โหลด CSV</button>
+  <button id="toggleTaskBtn" onclick="toggleTaskSection()">แสดง/ซ่อน รายการงานและ CSV</button>
+</div>
+
+<div id="taskSection" style="margin-top:20px;">
+  <div id="taskList"></div>
+
+  <div style="margin-top: 10px;">
+    <button onclick="triggerCSV()">📥 อัปโหลด CSV</button>
+    <input type="file" id="csvInput" accept=".csv" onchange="handleCSV(event)" style="display:none;">
+    <button onclick="downloadCSV()">📤 ดาวน์โหลด CSV</button>
+  </div>
 </div>
 
 <div id="timeline"></div>
-<div id="taskList"></div>
 
 <script>
   google.charts.load("current", { packages: ["timeline"] });
@@ -126,6 +133,9 @@
       timelineData = JSON.parse(saved);
     }
     initChart();
+
+    // เริ่มต้นแสดง taskSection
+    document.getElementById("taskSection").style.display = "block";
   });
 
   function triggerUpload(event) {
@@ -289,6 +299,15 @@
     link.href = URL.createObjectURL(blob);
     link.download = "timeline_export.csv";
     link.click();
+  }
+
+  function toggleTaskSection() {
+    const section = document.getElementById("taskSection");
+    if (section.style.display === "none" || section.style.display === "") {
+      section.style.display = "block";
+    } else {
+      section.style.display = "none";
+    }
   }
 </script>
 
