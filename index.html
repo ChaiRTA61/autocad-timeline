@@ -123,12 +123,9 @@
 
     const saved = localStorage.getItem("timelineData");
     if (saved) {
-      // เมื่อโหลดข้อมูลจาก localStorage ให้แปลงวันที่กลับเป็น Date object
-      // หรือเก็บเป็น string ไว้แล้วแปลงเมื่อจะนำไปใช้กับ new Date() ใน drawChart
-      // ในที่นี้เลือกเก็บเป็น string เหมือนเดิมเพื่อให้สอดคล้องกับ input date
       timelineData = JSON.parse(saved);
     }
-    initChart(); // เรียก initChart อีกครั้งเพื่อให้ chart ถูกวาดหลังจากโหลดข้อมูล
+    initChart(); // Ensure chart is initialized and drawn with saved data
   });
 
   function triggerUpload(event) {
@@ -152,7 +149,10 @@
 
   function imageClick() {
     if (previewImage.style.display === "block") {
-      uploadBtn.style.display = "inline-block";
+      // If an image is already displayed, clicking should allow re-upload
+      fileInput.click();
+    } else {
+      // If no image is displayed (upload button visible), clicking the box triggers upload
       fileInput.click();
     }
   }
@@ -162,42 +162,54 @@
     chart = new google.visualization.Timeline(container);
     dataTable = new google.visualization.DataTable();
     dataTable.addColumn({ type: "string", id: "งาน" });
-    dataTable.addColumn({ type: "string", role: "tooltip", p: { html: true } });
+    dataTable.addColumn({ type: "string", role: "tooltip", p: { html: true } }); // This column is for the HTML tooltip
     dataTable.addColumn({ type: "date", id: "เริ่ม" });
     dataTable.addColumn({ type: "date", id: "สิ้นสุด" });
     drawChart();
     renderTaskList();
   }
 
+  // New function to create tooltip HTML
+  function createTooltipHtml(name, owner, details) {
+    return `
+      <div style="padding:10px; font-size:14px;">
+        <strong>📌 ชื่องาน:</strong> ${name}<br/>
+        <strong>👤 เจ้าของงาน:</strong> ${owner}<br/>
+        <strong>📋 รายละเอียด:</strong><br/>${details.replace(/,/g, "<br/>")}
+      </div>`;
+  }
+
   function drawChart() {
-    // ลบแถวเก่าทั้งหมดก่อนเพิ่มแถวใหม่
-    if (dataTable.getNumberOfRows() > 0) {
-      dataTable.removeRows(0, dataTable.getNumberOfRows());
-    }
+    // Clear existing rows before drawing
+    dataTable.removeRows(0, dataTable.getNumberOfRows());
     
     timelineData.forEach(row => {
-      // เข้าถึงข้อมูลโดยใช้ index เพื่อความแน่ใจ
-      const name = row[0]; // ชื่อโปรเจกต์
-      const start = row[1]; // วันที่เริ่ม (string)
-      const end = row[2]; // วันที่สิ้นสุด (string)
-      const details = row[3]; // รายละเอียดการดำเนินงาน
-      const owner = row[4]; // ชื่อเจ้าของงาน
+      // Ensure correct access to array elements
+      const name = row[0];
+      const start = row[1];
+      const end = row[2];
+      const details = row[3];
+      const owner = row[4];
 
-      const tooltip = `
-        <div style="padding:10px; font-size:14px;">
-          <strong>📌 ชื่องาน:</strong> ${name}<br/>
-          <strong>👤 เจ้าของงาน:</strong> ${owner}<br/>
-          <strong>📋 รายละเอียด:</strong><br/>${details.replace(/,/g, "<br/>")}
-        </div>`;
+      // Generate the tooltip HTML using the new function
+      const tooltip = createTooltipHtml(name, owner, details);
 
+      // Add row to dataTable. Ensure the order matches addColumn definitions.
+      // [ Task Name, Tooltip HTML, Start Date, End Date ]
       dataTable.addRow([name, tooltip, new Date(start), new Date(end)]);
     });
+    
+    // Draw the chart with HTML tooltips enabled
     chart.draw(dataTable, { tooltip: { isHtml: true } });
   }
 
   function renderTaskList() {
     const container = document.getElementById("taskList");
     container.innerHTML = "<h3>รายการงาน</h3>";
+    if (timelineData.length === 0) {
+        container.innerHTML += "<p>ยังไม่มีงานในรายการ</p>";
+        return;
+    }
     timelineData.forEach((row, index) => {
       const name = row[0];
       const start = row[1];
@@ -226,7 +238,7 @@
     const owner = document.getElementById("ownerName").value.trim();
 
     if (!name || !start || !end || !details || !owner) {
-      alert("กรุณากรอกข้อมูลให้ครบ");
+      alert("กรุณากรอกข้อมูลให้ครบทุกช่อง");
       return;
     }
 
@@ -235,7 +247,6 @@
       return;
     }
 
-    // จัดเก็บข้อมูลตามลำดับ: [ชื่อโปรเจกต์, วันที่เริ่ม, วันที่สิ้นสุด, รายละเอียด, เจ้าของงาน]
     const row = [name, start, end, details, owner];
     timelineData.push(row);
     localStorage.setItem("timelineData", JSON.stringify(timelineData));
@@ -246,7 +257,7 @@
   }
 
   function deleteTask(index) {
-    if (confirm("ต้องการลบงานนี้ใช่หรือไม่?")) {
+    if (confirm("คุณต้องการลบงานนี้ใช่หรือไม่?")) {
       timelineData.splice(index, 1);
       localStorage.setItem("timelineData", JSON.stringify(timelineData));
       drawChart();
@@ -266,13 +277,19 @@
     document.getElementById("formSection").style.display = "none";
   }
 
-  // แก้ไขให้ formSection แสดงขึ้นมาเมื่อคลิกที่ใดก็ได้ครั้งแรก
+  // Show the form when clicking anywhere on the page for the first time,
+  // but prevent it from showing if clicking elements within the upload box.
   document.addEventListener("click", function (event) {
-    // ตรวจสอบว่าไม่ได้คลิกภายในฟอร์มเอง
-    if (!document.getElementById("formSection").contains(event.target) && event.target.id !== "uploadBtn" && event.target.id !== "fileInput" && event.target.id !== "previewImage") {
-        document.getElementById("formSection").style.display = "block";
+    const formSection = document.getElementById("formSection");
+    const uploadBox = document.getElementById("uploadBox");
+
+    // Only show if the form is hidden AND the click is not inside the form AND not inside the upload box
+    if (formSection.style.display === "none" && 
+        !formSection.contains(event.target) && 
+        !uploadBox.contains(event.target)) {
+      formSection.style.display = "block";
     }
-  }, { once: true }); // ให้ทำงานแค่ครั้งเดียว
+  }, { once: true }); // This ensures the event listener is removed after the first trigger
 </script>
 
 </body>
