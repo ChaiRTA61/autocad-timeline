@@ -149,10 +149,8 @@
 
   function imageClick() {
     if (previewImage.style.display === "block") {
-      // If an image is already displayed, clicking should allow re-upload
       fileInput.click();
     } else {
-      // If no image is displayed (upload button visible), clicking the box triggers upload
       fileInput.click();
     }
   }
@@ -162,14 +160,13 @@
     chart = new google.visualization.Timeline(container);
     dataTable = new google.visualization.DataTable();
     dataTable.addColumn({ type: "string", id: "งาน" });
-    dataTable.addColumn({ type: "string", role: "tooltip", p: { html: true } }); // This column is for the HTML tooltip
+    dataTable.addColumn({ type: "string", role: "tooltip", p: { html: true } });
     dataTable.addColumn({ type: "date", id: "เริ่ม" });
     dataTable.addColumn({ type: "date", id: "สิ้นสุด" });
     drawChart();
     renderTaskList();
   }
 
-  // New function to create tooltip HTML
   function createTooltipHtml(name, owner, details) {
     return `
       <div style="padding:10px; font-size:14px;">
@@ -180,26 +177,22 @@
   }
 
   function drawChart() {
-    // Clear existing rows before drawing
-    dataTable.removeRows(0, dataTable.getNumberOfRows());
+    if (dataTable.getNumberOfRows() > 0) {
+      dataTable.removeRows(0, dataTable.getNumberOfRows());
+    }
     
     timelineData.forEach(row => {
-      // Ensure correct access to array elements
       const name = row[0];
       const start = row[1];
       const end = row[2];
       const details = row[3];
       const owner = row[4];
 
-      // Generate the tooltip HTML using the new function
       const tooltip = createTooltipHtml(name, owner, details);
 
-      // Add row to dataTable. Ensure the order matches addColumn definitions.
-      // [ Task Name, Tooltip HTML, Start Date, End Date ]
       dataTable.addRow([name, tooltip, new Date(start), new Date(end)]);
     });
     
-    // Draw the chart with HTML tooltips enabled
     chart.draw(dataTable, { tooltip: { isHtml: true } });
   }
 
@@ -253,7 +246,8 @@
     drawChart();
     renderTaskList();
     clearInputs();
-    closeForm();
+    // *** แก้ไขตรงนี้: เรียก closeForm() ที่นี่เพื่อให้ฟอร์มหายไปหลังจากเพิ่มงานสำเร็จ ***
+    closeForm(); 
   }
 
   function deleteTask(index) {
@@ -279,17 +273,18 @@
 
   // Show the form when clicking anywhere on the page for the first time,
   // but prevent it from showing if clicking elements within the upload box.
+  let formShownOnce = false; // เพิ่มตัวแปรสถานะ
   document.addEventListener("click", function (event) {
     const formSection = document.getElementById("formSection");
     const uploadBox = document.getElementById("uploadBox");
 
-    // Only show if the form is hidden AND the click is not inside the form AND not inside the upload box
-    if (formSection.style.display === "none" && 
-        !formSection.contains(event.target) && 
-        !uploadBox.contains(event.target)) {
+    // ถ้าฟอร์มยังไม่เคยแสดงมาก่อน และการคลิกไม่ได้อยู่ในฟอร์มหรือกล่องอัปโหลด
+    if (!formShownOnce && !formSection.contains(event.target) && !uploadBox.contains(event.target)) {
       formSection.style.display = "block";
+      formShownOnce = true; // ตั้งค่าเป็น true เพื่อไม่ให้แสดงอีกในการคลิกครั้งถัดไป
     }
-  }, { once: true }); // This ensures the event listener is removed after the first trigger
+  }); // ลบ { once: true } ออกเพื่อให้ event listener ยังคงอยู่
+
 </script>
 
 </body>
