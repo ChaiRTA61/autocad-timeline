@@ -99,7 +99,6 @@
 <div id="taskList"></div>
 
 <script>
-  // โหลด Google Charts
   google.charts.load("current", { packages: ["timeline"] });
   google.charts.setOnLoadCallback(initChart);
 
@@ -167,14 +166,16 @@
     timelineData.forEach(row => {
       const [name, start, end, details, owner] = row;
       const tooltip = `
-        <div style="padding:10px;">
-          <strong>ชื่อโปรเจกต์:</strong> ${name}<br/>
-          <strong>เจ้าของงาน:</strong> ${owner}<br/>
-          <strong>รายละเอียด:</strong><br/>${details.replace(/,/g, "<br/>")}
+        <div style="padding:10px; font-size:14px; line-height:1.4;">
+          <strong>📌 โปรเจกต์:</strong> ${name}<br/>
+          <strong>👤 เจ้าของงาน:</strong> ${owner}<br/>
+          <strong>📋 รายละเอียด:</strong><br/>${details.replace(/,/g, "<br/>")}
         </div>`;
       dataTable.addRow([name, tooltip, new Date(start), new Date(end)]);
     });
-    chart.draw(dataTable, { tooltip: { isHtml: true } });
+    chart.draw(dataTable, {
+      tooltip: { isHtml: true }
+    });
   }
 
   function renderTaskList() {
