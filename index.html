@@ -6,7 +6,7 @@
   <script src="https://www.gstatic.com/charts/loader.js"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
-    
+
     #uploadBox {
       width: 300px;
       height: 200px;
@@ -20,6 +20,7 @@
       margin-bottom: 20px;
       cursor: pointer;
     }
+
     #uploadBtn {
       color: white;
       background: transparent;
@@ -31,6 +32,7 @@
       position: absolute;
       z-index: 2;
     }
+
     #previewImage {
       max-width: 100%;
       max-height: 100%;
@@ -43,6 +45,7 @@
       height: 100%;
       z-index: 1;
     }
+
     #fileInput {
       display: none;
     }
@@ -61,6 +64,7 @@
       z-index: 1000;
       width: 300px;
     }
+
     label, input { display: block; margin: 5px 0; width: 100%; box-sizing: border-box; }
     #timeline { height: 500px; margin-top: 30px; }
     #taskList { margin-top: 20px; }
@@ -99,7 +103,6 @@
 <div id="taskList"></div>
 
 <script>
-  // โหลด Google Charts
   google.charts.load("current", { packages: ["timeline"] });
   google.charts.setOnLoadCallback(initChart);
 
@@ -122,6 +125,7 @@
     if (saved) {
       timelineData = JSON.parse(saved);
     }
+    initChart();
   });
 
   function triggerUpload(event) {
@@ -166,12 +170,14 @@
     dataTable.removeRows(0, dataTable.getNumberOfRows());
     timelineData.forEach(row => {
       const [name, start, end, details, owner] = row;
+
       const tooltip = `
-        <div style="padding:10px;">
-          <strong>ชื่อโปรเจกต์:</strong> ${name}<br/>
-          <strong>เจ้าของงาน:</strong> ${owner}<br/>
-          <strong>รายละเอียด:</strong><br/>${details.replace(/,/g, "<br/>")}
+        <div style="padding:10px; font-size:14px;">
+          <strong>📌 ชื่องาน:</strong> ${name}<br/>
+          <strong>👤 เจ้าของงาน:</strong> ${owner}<br/>
+          <strong>📋 รายละเอียด:</strong><br/>${details.replace(/,/g, "<br/>")}
         </div>`;
+
       dataTable.addRow([name, tooltip, new Date(start), new Date(end)]);
     });
     chart.draw(dataTable, { tooltip: { isHtml: true } });
