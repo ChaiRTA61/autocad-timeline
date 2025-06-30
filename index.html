@@ -81,8 +81,23 @@
   <img id="previewImage" alt="Preview Image">
 </div>
 
-<h2>📅 Timeline งานเขียนแบบ</h2>
+<!-- ย้ายกล่อง timeline มาอยู่ต่อท้าย uploadBox -->
+<div id="timeline"></div>
 
+<!-- ปุ่มซ่อน/โชว์ และรายการงาน + ปุ่ม CSV ต่อท้าย timeline -->
+<div id="taskSection" style="margin-top:20px;">
+  <button id="toggleTaskBtn" onclick="toggleTaskSection()">แสดง/ซ่อน รายการงานและ CSV</button>
+  
+  <div id="taskList" style="margin-top:10px;"></div>
+
+  <div style="margin-top: 10px;">
+    <button onclick="triggerCSV()">📥 อัปโหลด CSV</button>
+    <input type="file" id="csvInput" accept=".csv" onchange="handleCSV(event)" style="display:none;">
+    <button onclick="downloadCSV()">📤 ดาวน์โหลด CSV</button>
+  </div>
+</div>
+
+<h2>📅 เพิ่มงานใหม่</h2>
 <div id="formSection">
   <label>ชื่อโปรเจกต์: <input type="text" id="projectName"></label>
   <label>วันที่เริ่ม: <input type="date" id="startDate"></label>
@@ -92,22 +107,6 @@
   <button onclick="addToTimeline()">เพิ่มงาน</button>
   <button onclick="closeForm()">ปิด</button>
 </div>
-
-<div>
-  <button id="toggleTaskBtn" onclick="toggleTaskSection()">แสดง/ซ่อน รายการงานและ CSV</button>
-</div>
-
-<div id="taskSection" style="margin-top:20px;">
-  <div id="taskList"></div>
-
-  <div style="margin-top: 10px;">
-    <button onclick="triggerCSV()">📥 อัปโหลด CSV</button>
-    <input type="file" id="csvInput" accept=".csv" onchange="handleCSV(event)" style="display:none;">
-    <button onclick="downloadCSV()">📤 ดาวน์โหลด CSV</button>
-  </div>
-</div>
-
-<div id="timeline"></div>
 
 <script>
   google.charts.load("current", { packages: ["timeline"] });
@@ -134,7 +133,6 @@
     }
     initChart();
 
-    // เริ่มต้นแสดง taskSection
     document.getElementById("taskSection").style.display = "block";
   });
 
