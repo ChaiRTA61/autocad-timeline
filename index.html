@@ -2,11 +2,10 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Timeline งานเขียนแบบ พร้อม Upload Image</title>
+  <title>Timeline งานเขียนแบบ พร้อม Upload Image และ CSV</title>
   <script src="https://www.gstatic.com/charts/loader.js"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
-
     #uploadBox {
       width: 300px;
       height: 200px;
@@ -20,7 +19,6 @@
       margin-bottom: 20px;
       cursor: pointer;
     }
-
     #uploadBtn {
       color: white;
       background: transparent;
@@ -32,7 +30,6 @@
       position: absolute;
       z-index: 2;
     }
-
     #previewImage {
       max-width: 100%;
       max-height: 100%;
@@ -45,11 +42,9 @@
       height: 100%;
       z-index: 1;
     }
-
-    #fileInput {
+    #fileInput, #csvInput {
       display: none;
     }
-
     #formSection {
       display: none;
       position: fixed;
@@ -64,7 +59,6 @@
       z-index: 1000;
       width: 300px;
     }
-
     label, input { display: block; margin: 5px 0; width: 100%; box-sizing: border-box; }
     #timeline { height: 500px; margin-top: 30px; }
     #taskList { margin-top: 20px; }
@@ -76,8 +70,6 @@
       border: 1px solid #ddd;
       border-radius: 6px;
     }
-
-    ol { padding-left: 20px; }
   </style>
 </head>
 <body>
@@ -95,14 +87,16 @@
   <label>ชื่อโปรเจกต์: <input type="text" id="projectName"></label>
   <label>วันที่เริ่ม: <input type="date" id="startDate"></label>
   <label>วันที่สิ้นสุด: <input type="date" id="endDate"></label>
-  <label>รายละเอียดการดำเนินงาน: <input type="text" id="taskDetails" placeholder="ขั้นตอนที่ 1;2;3"></label>
-  <label>ชื่อเจ้าของงาน: <input type="text" id="ownerName" placeholder="ชื่อเจ้าของงาน"></label>
+  <label>รายละเอียดการดำเนินงาน: <input type="text" id="taskDetails" placeholder="ขั้นตอนที่ 1,2,3"></label>
   <button onclick="addToTimeline()">เพิ่มงาน</button>
   <button onclick="closeForm()">ปิด</button>
 </div>
 
-<h3>📥 อัปโหลดข้อมูลด้วย CSV</h3>
-<input type="file" id="csvFile" accept=".csv" onchange="handleCSVUpload(event)" />
+<div>
+  <button onclick="triggerCSV()">📥 อัปโหลด CSV</button>
+  <input type="file" id="csvInput" accept=".csv" onchange="handleCSV(event)">
+  <button onclick="downloadCSV()">📤 ดาวน์โหลด CSV</button>
+</div>
 
 <div id="timeline"></div>
 <div id="taskList"></div>
@@ -141,7 +135,6 @@
   function handleUpload(event) {
     const file = event.target.files[0];
     if (!file || !file.type.startsWith("image/")) return;
-
     const reader = new FileReader();
     reader.onload = function (e) {
       previewImage.src = e.target.result;
@@ -174,13 +167,13 @@
   function drawChart() {
     dataTable.removeRows(0, dataTable.getNumberOfRows());
     timelineData.forEach(row => {
-      const [name, start, end, details, owner] = row;
+      const [name, start, end, details] = row;
+      const steps = details.split(",").map(s => `<li>${s.trim()}</li>`).join("");
       const tooltip = `
         <div style="padding:10px; font-size:14px;">
           <strong>📌 ชื่องาน:</strong> ${name}<br/>
-          <strong>👤 เจ้าของงาน:</strong> ${owner}<br/>
           <strong>📋 รายละเอียด:</strong>
-          <ol>${details.split(';').map(item => `<li>${item.trim()}</li>`).join('')}</ol>
+          <ol style="margin:5px 0 0 15px;">${steps}</ol>
         </div>`;
       dataTable.addRow([name, tooltip, new Date(start), new Date(end)]);
     });
@@ -191,14 +184,13 @@
     const container = document.getElementById("taskList");
     container.innerHTML = "<h3>รายการงาน</h3>";
     timelineData.forEach((row, index) => {
-      const [name, start, end, details, owner] = row;
+      const [name, start, end, details] = row;
       const div = document.createElement("div");
       div.className = "task-item";
       div.innerHTML = `
         🛠️ <strong>${name}</strong><br/>
         📅 ${start} ถึง ${end}<br/>
-        👤 เจ้าของงาน: ${owner}<br/>
-        📋 รายละเอียด:<br/> <ol>${details.split(';').map(item => `<li>${item.trim()}</li>`).join('')}</ol>
+        📋 รายละเอียด: ${details}
         <br/><button onclick="deleteTask(${index})">🗑️ ลบ</button>
       `;
       container.appendChild(div);
@@ -210,20 +202,17 @@
     const start = document.getElementById("startDate").value;
     const end = document.getElementById("endDate").value;
     const details = document.getElementById("taskDetails").value.trim();
-    const owner = document.getElementById("ownerName").value.trim();
 
-    if (!name || !start || !end || !details || !owner) {
+    if (!name || !start || !end || !details) {
       alert("กรุณากรอกข้อมูลให้ครบ");
       return;
     }
-
     if (new Date(start) > new Date(end)) {
       alert("วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด");
       return;
     }
 
-    const row = [name, start, end, details, owner];
-    timelineData.push(row);
+    timelineData.push([name, start, end, details]);
     localStorage.setItem("timelineData", JSON.stringify(timelineData));
     drawChart();
     renderTaskList();
@@ -245,7 +234,6 @@
     document.getElementById("startDate").value = "";
     document.getElementById("endDate").value = "";
     document.getElementById("taskDetails").value = "";
-    document.getElementById("ownerName").value = "";
   }
 
   function closeForm() {
@@ -256,24 +244,46 @@
     document.getElementById("formSection").style.display = "block";
   }, { once: true });
 
-  function handleCSVUpload(event) {
+  function triggerCSV() {
+    document.getElementById("csvInput").click();
+  }
+
+  function handleCSV(event) {
     const file = event.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = function (e) {
-      const lines = e.target.result.trim().split('\n');
-      const rows = lines.slice(1); // ข้าม header
-      rows.forEach(row => {
-        const [index, name, details, start, end] = row.split(',');
-        const newRow = [name, start, end, details, "เจ้าของไม่ระบุ"];
-        timelineData.push(newRow);
-      });
+      const lines = e.target.result.split(/\r?\n/).slice(1);
+      for (let line of lines) {
+        if (!line.trim()) continue;
+        const [index, name, details, start, end] = line.split(",");
+        if (!name || !start || !end || !details) continue;
+        timelineData.push([name.trim(), start.trim(), end.trim(), details.trim()]);
+      }
       localStorage.setItem("timelineData", JSON.stringify(timelineData));
       drawChart();
       renderTaskList();
     };
     reader.readAsText(file);
+  }
+
+  function downloadCSV() {
+    if (timelineData.length === 0) {
+      alert("ยังไม่มีข้อมูลใน Timeline");
+      return;
+    }
+    const header = ["ลำดับ", "ชื่องาน", "การดำเนินงาน", "วันเริ่ม", "วันสิ้นสุด"];
+    const rows = timelineData.map((row, i) => {
+      const [name, start, end, details] = row;
+      return [i + 1, `"${name}"`, `"${details.replace(/"/g, '""')}"`, start, end];
+    });
+    let csv = header.join(",") + "\n" + rows.map(r => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "timeline_export.csv";
+    link.click();
   }
 </script>
 
