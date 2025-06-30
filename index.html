@@ -2,60 +2,205 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Timeline งานเขียนแบบ</title>
+  <title>Timeline งานเขียนแบบ พร้อม Upload Image</title>
   <script src="https://www.gstatic.com/charts/loader.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    #timeline { height: 500px; margin-top: 30px; }
-    #formSection label, #formSection input {
-      display: block; margin: 5px 0; width: 100%;
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    
+    #uploadBox {
+      width: 300px;
+      height: 200px;
+      background-color: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      cursor: pointer;
     }
+    #uploadBtn {
+      color: white;
+      background: transparent;
+      border: 2px dashed white;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 16px;
+      position: absolute;
+      z-index: 2;
+    }
+    #previewImage {
+      max-width: 100%;
+      max-height: 100%;
+      display: none;
+      cursor: pointer;
+      object-fit: cover;
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+    #fileInput {
+      display: none;
+    }
+
     #formSection {
-      width: 300px; padding: 10px;
-      background: #f4f4f4; border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      display: none;
+      position: fixed;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #f2f2f2;
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 1000;
+      width: 300px;
     }
+    label, input { display: block; margin: 5px 0; width: 100%; box-sizing: border-box; }
+    #timeline { height: 500px; margin-top: 30px; }
+    #taskList { margin-top: 20px; }
     button { margin-top: 10px; }
+    .task-item {
+      margin-bottom: 8px;
+      background: #f9f9f9;
+      padding: 5px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+    }
   </style>
 </head>
 <body>
 
-<h2>📅 เพิ่มโปรเจกต์ลง Timeline</h2>
+<h2>📷 อัปโหลดรูปภาพ</h2>
+<div id="uploadBox" onclick="imageClick()">
+  <button id="uploadBtn" onclick="triggerUpload(event)">อัปโหลดภาพ</button>
+  <input type="file" id="fileInput" accept="image/*" onchange="handleUpload(event)">
+  <img id="previewImage" alt="Preview Image">
+</div>
+
+<h2>📅 Timeline งานเขียนแบบ</h2>
+
 <div id="formSection">
   <label>ชื่อโปรเจกต์: <input type="text" id="projectName"></label>
   <label>วันที่เริ่ม: <input type="date" id="startDate"></label>
   <label>วันที่สิ้นสุด: <input type="date" id="endDate"></label>
-  <label>รายละเอียด: <input type="text" id="details" placeholder="ขั้นตอนที่ 1,2,3"></label>
-  <label>เจ้าของงาน: <input type="text" id="owner"></label>
-  <button onclick="addProject()">เพิ่มโปรเจกต์</button>
+  <label>รายละเอียดการดำเนินงาน: <input type="text" id="taskDetails" placeholder="ขั้นตอนที่ 1,2,3"></label>
+  <label>ชื่อเจ้าของงาน: <input type="text" id="ownerName" placeholder="ชื่อเจ้าของงาน"></label>
+  <button onclick="addToTimeline()">เพิ่มงาน</button>
+  <button onclick="closeForm()">ปิด</button>
 </div>
 
 <div id="timeline"></div>
+<div id="taskList"></div>
 
 <script>
-  google.charts.load('current', { packages: ['timeline'] });
+  // โหลด Google Charts
+  google.charts.load("current", { packages: ["timeline"] });
   google.charts.setOnLoadCallback(initChart);
 
   let chart, dataTable;
   let timelineData = [];
 
-  function initChart() {
-    const container = document.getElementById('timeline');
-    chart = new google.visualization.Timeline(container);
-    dataTable = new google.visualization.DataTable();
-    dataTable.addColumn({ type: 'string', id: 'โปรเจกต์' });
-    dataTable.addColumn({ type: 'string', role: 'tooltip', p: { html: true } });
-    dataTable.addColumn({ type: 'date', id: 'เริ่ม' });
-    dataTable.addColumn({ type: 'date', id: 'สิ้นสุด' });
-    drawChart();
+  const uploadBtn = document.getElementById("uploadBtn");
+  const fileInput = document.getElementById("fileInput");
+  const previewImage = document.getElementById("previewImage");
+
+  window.addEventListener("load", () => {
+    const savedImage = localStorage.getItem("uploadedImage");
+    if (savedImage) {
+      previewImage.src = savedImage;
+      previewImage.style.display = "block";
+      uploadBtn.style.display = "none";
+    }
+
+    const saved = localStorage.getItem("timelineData");
+    if (saved) {
+      timelineData = JSON.parse(saved);
+    }
+  });
+
+  function triggerUpload(event) {
+    event.stopPropagation();
+    fileInput.click();
   }
 
-  function addProject() {
-    const name = document.getElementById('projectName').value.trim();
-    const start = document.getElementById('startDate').value;
-    const end = document.getElementById('endDate').value;
-    const details = document.getElementById('details').value.trim();
-    const owner = document.getElementById('owner').value.trim();
+  function handleUpload(event) {
+    const file = event.target.files[0];
+    if (!file || !file.type.startsWith("image/")) return;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      previewImage.src = e.target.result;
+      previewImage.style.display = "block";
+      uploadBtn.style.display = "none";
+      localStorage.setItem("uploadedImage", e.target.result);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function imageClick() {
+    if (previewImage.style.display === "block") {
+      uploadBtn.style.display = "inline-block";
+      fileInput.click();
+    }
+  }
+
+  function initChart() {
+    const container = document.getElementById("timeline");
+    chart = new google.visualization.Timeline(container);
+    dataTable = new google.visualization.DataTable();
+    dataTable.addColumn({ type: "string", id: "งาน" });
+    dataTable.addColumn({ type: "string", role: "tooltip", p: { html: true } });
+    dataTable.addColumn({ type: "date", id: "เริ่ม" });
+    dataTable.addColumn({ type: "date", id: "สิ้นสุด" });
+    drawChart();
+    renderTaskList();
+  }
+
+  function drawChart() {
+    dataTable.removeRows(0, dataTable.getNumberOfRows());
+    timelineData.forEach(row => {
+      const [name, start, end, details, owner] = row;
+      const tooltip = `
+        <div style="padding:10px;">
+          <strong>ชื่อโปรเจกต์:</strong> ${name}<br/>
+          <strong>เจ้าของงาน:</strong> ${owner}<br/>
+          <strong>รายละเอียด:</strong><br/>${details.replace(/,/g, "<br/>")}
+        </div>`;
+      dataTable.addRow([name, tooltip, new Date(start), new Date(end)]);
+    });
+    chart.draw(dataTable, { tooltip: { isHtml: true } });
+  }
+
+  function renderTaskList() {
+    const container = document.getElementById("taskList");
+    container.innerHTML = "<h3>รายการงาน</h3>";
+    timelineData.forEach((row, index) => {
+      const [name, start, end, details, owner] = row;
+      const div = document.createElement("div");
+      div.className = "task-item";
+      div.innerHTML = `
+        🛠️ <strong>${name}</strong><br/>
+        📅 ${start} ถึง ${end}<br/>
+        👤 เจ้าของงาน: ${owner}<br/>
+        📋 รายละเอียด: ${details}
+        <br/><button onclick="deleteTask(${index})">🗑️ ลบ</button>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function addToTimeline() {
+    const name = document.getElementById("projectName").value.trim();
+    const start = document.getElementById("startDate").value;
+    const end = document.getElementById("endDate").value;
+    const details = document.getElementById("taskDetails").value.trim();
+    const owner = document.getElementById("ownerName").value.trim();
 
     if (!name || !start || !end || !details || !owner) {
       alert("กรุณากรอกข้อมูลให้ครบ");
@@ -63,31 +208,43 @@
     }
 
     if (new Date(start) > new Date(end)) {
-      alert("วันที่เริ่มต้องไม่เกินวันสิ้นสุด");
+      alert("วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด");
       return;
     }
 
-    const tooltip = `
-      <div style="padding:10px; font-size:14px; line-height:1.4;">
-        <strong>📌 ชื่องาน:</strong> ${name}<br/>
-        <strong>👤 เจ้าของ:</strong> ${owner}<br/>
-        <strong>📋 รายละเอียด:</strong><br/>${details.replace(/,/g, "<br/>")}
-      </div>
-    `;
-
-    timelineData.push([name, tooltip, new Date(start), new Date(end)]);
+    const row = [name, start, end, details, owner];
+    timelineData.push(row);
+    localStorage.setItem("timelineData", JSON.stringify(timelineData));
     drawChart();
+    renderTaskList();
+    clearInputs();
+    closeForm();
   }
 
-  function drawChart() {
-    dataTable.removeRows(0, dataTable.getNumberOfRows());
-    timelineData.forEach(row => {
-      dataTable.addRow(row);
-    });
-    chart.draw(dataTable, {
-      tooltip: { isHtml: true }
-    });
+  function deleteTask(index) {
+    if (confirm("ต้องการลบงานนี้ใช่หรือไม่?")) {
+      timelineData.splice(index, 1);
+      localStorage.setItem("timelineData", JSON.stringify(timelineData));
+      drawChart();
+      renderTaskList();
+    }
   }
+
+  function clearInputs() {
+    document.getElementById("projectName").value = "";
+    document.getElementById("startDate").value = "";
+    document.getElementById("endDate").value = "";
+    document.getElementById("taskDetails").value = "";
+    document.getElementById("ownerName").value = "";
+  }
+
+  function closeForm() {
+    document.getElementById("formSection").style.display = "none";
+  }
+
+  document.addEventListener("click", function () {
+    document.getElementById("formSection").style.display = "block";
+  }, { once: true });
 </script>
 
 </body>
