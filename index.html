@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Timeline งานเขียนแบบ พร้อม Upload Image</title>
+  <title>Timeline งานเขียนแบบ พร้อม Upload Image & Import CSV</title>
   <script src="https://www.gstatic.com/charts/loader.js"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
@@ -68,7 +68,9 @@
     label, input { display: block; margin: 5px 0; width: 100%; box-sizing: border-box; }
     #timeline { height: 500px; margin-top: 30px; }
     #taskList { margin-top: 20px; }
-    button { margin-top: 10px; }
+    button { margin-top: 10px; padding: 8px 15px; cursor: pointer; border-radius: 5px; border: 1px solid #ccc; background-color: #e0e0e0; }
+    button:hover { background-color: #d0d0d0; }
+
     .task-item {
       margin-bottom: 8px;
       background: #f9f9f9;
@@ -76,6 +78,15 @@
       border: 1px solid #ddd;
       border-radius: 6px;
     }
+
+    .import-section {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      background-color: #fcfcfc;
+    }
+    .import-section h3 { margin-top: 0; }
   </style>
 </head>
 <body>
@@ -88,6 +99,23 @@
 </div>
 
 <h2>📅 Timeline งานเขียนแบบ</h2>
+
+<div class="import-section">
+  <h3>นำเข้าข้อมูลจาก Excel (ไฟล์ CSV)</h3>
+  <p>เตรียมไฟล์ Excel โดยมีคอลัมน์ตามลำดับดังนี้:</p>
+  <ol>
+    <li>ลำดับ (สามารถเว้นว่างได้)</li>
+    <li>ชื่อโปรเจกต์ (หรือ ชื่องาน)</li>
+    <li>รายละเอียดการดำเนินงาน (เช่น ขั้นตอนที่ 1,2,3)</li>
+    <li>วันเริ่ม (รูปแบบ YYYY-MM-DD เช่น 2023-01-15)</li>
+    <li>วันสิ้นสุด (รูปแบบ YYYY-MM-DD เช่น 2023-01-20)</li>
+    <li>ชื่อเจ้าของงาน</li>
+  </ol>
+  <p>จากนั้นบันทึกเป็นไฟล์ **CSV (Comma Separated Values)**</p>
+  <input type="file" id="csvFileInput" accept=".csv" onchange="handleCsvUpload(event)">
+  <button onclick="document.getElementById('csvFileInput').click()">อัปโหลดไฟล์ CSV</button>
+  <button onclick="clearAllData()">ล้างข้อมูลทั้งหมด</button>
+</div>
 
 <div id="formSection">
   <label>ชื่อโปรเจกต์: <input type="text" id="projectName"></label>
@@ -112,6 +140,7 @@
   const uploadBtn = document.getElementById("uploadBtn");
   const fileInput = document.getElementById("fileInput");
   const previewImage = document.getElementById("previewImage");
+  const csvFileInput = document.getElementById("csvFileInput"); // CSV input element
 
   window.addEventListener("load", () => {
     const savedImage = localStorage.getItem("uploadedImage");
@@ -148,11 +177,7 @@
   }
 
   function imageClick() {
-    if (previewImage.style.display === "block") {
-      fileInput.click();
-    } else {
-      fileInput.click();
-    }
+    fileInput.click();
   }
 
   function initChart() {
@@ -188,8 +213,13 @@
       const details = row[3];
       const owner = row[4];
 
-      const tooltip = createTooltipHtml(name, owner, details);
+      // Validate dates before adding to chart
+      if (isNaN(new Date(start).getTime()) || isNaN(new Date(end).getTime())) {
+          console.warn(`Skipping row due to invalid date: ${row}`);
+          return; // Skip this row if dates are invalid
+      }
 
+      const tooltip = createTooltipHtml(name, owner, details);
       dataTable.addRow([name, tooltip, new Date(start), new Date(end)]);
     });
     
@@ -246,7 +276,6 @@
     drawChart();
     renderTaskList();
     clearInputs();
-    // *** แก้ไขตรงนี้: เรียก closeForm() ที่นี่เพื่อให้ฟอร์มหายไปหลังจากเพิ่มงานสำเร็จ ***
     closeForm(); 
   }
 
@@ -271,19 +300,125 @@
     document.getElementById("formSection").style.display = "none";
   }
 
+  // --- CSV Import Functions ---
+  function handleCsvUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const csvContent = e.target.result;
+      parseCsvData(csvContent);
+    };
+    reader.readAsText(file, 'UTF-8'); // Read as UTF-8 to handle Thai characters
+  }
+
+  function parseCsvData(csvString) {
+    const lines = csvString.split('\n');
+    let importedCount = 0;
+    let errorCount = 0;
+
+    // Optional: Skip header row if your CSV has one (uncomment next line if needed)
+    // lines.shift(); 
+
+    lines.forEach((line, index) => {
+      // Basic CSV parsing: split by comma, trim whitespace
+      // Be aware that more complex CSVs with commas in data might need a robust parser
+      const columns = line.split(',').map(col => col.trim());
+
+      // Validate minimum number of columns and date formats
+      // Expected columns: ลำดับ, ชื่อโปรเจกต์, รายละเอียด, วันเริ่ม, วันสิ้นสุด, เจ้าของงาน
+      // We expect at least 6 columns, even if 'ลำดับ' is empty.
+      if (columns.length < 6) {
+        if (line.trim() !== '') { // Only report non-empty lines as errors
+            console.warn(`Skipping malformed row ${index + 1}: Not enough columns. Line: "${line}"`);
+            errorCount++;
+        }
+        return; 
+      }
+
+      // Map CSV columns to our timelineData format: [name, start, end, details, owner]
+      // Excel/CSV columns: a ลำดับ, b ชื่องาน, c การดำเนินงาน, d วันเริ่ม, e วันสิ้นสุด
+      // Map to:                 [name,   start,     end,      details,     owner]
+      // Our CSV order: [ลำดับ, ชื่องาน, การดำเนินงาน, วันเริ่ม, วันสิ้นสุด, เจ้าของงาน]
+      const name = columns[1] || `Untitled Task ${timelineData.length + 1}`; // b ชื่องาน
+      const details = columns[2] || ''; // c การดำเนินงาน
+      const startDateStr = columns[3]; // d วันเริ่ม
+      const endDateStr = columns[4];   // e วันสิ้นสุด
+      const owner = columns[5] || 'ไม่ระบุ'; // f เจ้าของงาน
+
+      // Validate date format (YYYY-MM-DD)
+      const isValidStartDate = /^\d{4}-\d{2}-\d{2}$/.test(startDateStr);
+      const isValidEndDate = /^\d{4}-\d{2}-\d{2}$/.test(endDateStr);
+
+      if (!isValidStartDate || !isValidEndDate) {
+          console.warn(`Skipping row ${index + 1}: Invalid date format (expected YYYY-MM-DD). Start: "${startDateStr}", End: "${endDateStr}". Line: "${line}"`);
+          errorCount++;
+          return;
+      }
+
+      // Convert date strings to Date objects for validation, but store as strings
+      const startDateObj = new Date(startDateStr);
+      const endDateObj = new Date(endDateStr);
+
+      if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
+          console.warn(`Skipping row ${index + 1}: Invalid date value. Start: "${startDateStr}", End: "${endDateStr}". Line: "${line}"`);
+          errorCount++;
+          return;
+      }
+      
+      if (startDateObj > endDateObj) {
+          console.warn(`Skipping row ${index + 1}: Start date after end date. Line: "${line}"`);
+          errorCount++;
+          return;
+      }
+
+      // If all validations pass, add to timelineData
+      timelineData.push([name, startDateStr, endDateStr, details, owner]);
+      importedCount++;
+    });
+
+    if (importedCount > 0) {
+        localStorage.setItem("timelineData", JSON.stringify(timelineData));
+        drawChart();
+        renderTaskList();
+        alert(`นำเข้าข้อมูลสำเร็จ ${importedCount} รายการ. ${errorCount > 0 ? `พบข้อผิดพลาด ${errorCount} รายการ.` : ''}`);
+    } else if (errorCount > 0) {
+        alert(`ไม่สามารถนำเข้าข้อมูลได้ พบข้อผิดพลาด ${errorCount} รายการ กรุณาตรวจสอบไฟล์ CSV`);
+    } else {
+        alert("ไม่พบข้อมูลที่สามารถนำเข้าได้ในไฟล์ CSV หรือไฟล์ว่างเปล่า");
+    }
+  }
+
+  // --- Clear All Data Function ---
+  function clearAllData() {
+    if (confirm("คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลงานทั้งหมด? ข้อมูลรูปภาพจะไม่ถูกลบ.")) {
+      timelineData = [];
+      localStorage.removeItem("timelineData");
+      drawChart(); // Redraw chart with empty data
+      renderTaskList(); // Update task list
+      alert("ข้อมูลงานทั้งหมดถูกล้างแล้ว");
+    }
+  }
+
+
   // Show the form when clicking anywhere on the page for the first time,
-  // but prevent it from showing if clicking elements within the upload box.
-  let formShownOnce = false; // เพิ่มตัวแปรสถานะ
+  // but prevent it from showing if clicking elements within the upload box or CSV import section.
+  let formShownOnce = false; 
   document.addEventListener("click", function (event) {
     const formSection = document.getElementById("formSection");
     const uploadBox = document.getElementById("uploadBox");
+    const importSection = document.querySelector(".import-section"); // Select the new import section
 
-    // ถ้าฟอร์มยังไม่เคยแสดงมาก่อน และการคลิกไม่ได้อยู่ในฟอร์มหรือกล่องอัปโหลด
-    if (!formShownOnce && !formSection.contains(event.target) && !uploadBox.contains(event.target)) {
+    // If the form hasn't been shown yet AND the click is not inside the form AND not inside the upload box AND not inside the import section
+    if (!formShownOnce && 
+        !formSection.contains(event.target) && 
+        !uploadBox.contains(event.target) &&
+        !importSection.contains(event.target)) {
       formSection.style.display = "block";
-      formShownOnce = true; // ตั้งค่าเป็น true เพื่อไม่ให้แสดงอีกในการคลิกครั้งถัดไป
+      formShownOnce = true; 
     }
-  }); // ลบ { once: true } ออกเพื่อให้ event listener ยังคงอยู่
+  }); 
 
 </script>
 
