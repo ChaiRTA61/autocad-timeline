@@ -89,6 +89,8 @@
   <label>ชื่อโปรเจกต์: <input type="text" id="projectName"></label>
   <label>วันที่เริ่ม: <input type="date" id="startDate"></label>
   <label>วันที่สิ้นสุด: <input type="date" id="endDate"></label>
+  <label>รายละเอียดการดำเนินงาน: <input type="text" id="taskDetails" placeholder="ขั้นตอนที่ 1,2,3"></label>
+  <label>ชื่อเจ้าของงาน: <input type="text" id="ownerName" placeholder="ชื่อเจ้าของงาน"></label>
   <button onclick="addToTimeline()">เพิ่มงาน</button>
   <button onclick="closeForm()">ปิด</button>
 </div>
@@ -97,20 +99,17 @@
 <div id="taskList"></div>
 
 <script>
-  // โหลด Google Charts Timeline
+  // โหลด Google Charts
   google.charts.load("current", { packages: ["timeline"] });
   google.charts.setOnLoadCallback(initChart);
 
-  // ตัวแปรสำหรับ Timeline
   let chart, dataTable;
   let timelineData = [];
 
-  // อัปโหลดภาพ
   const uploadBtn = document.getElementById("uploadBtn");
   const fileInput = document.getElementById("fileInput");
   const previewImage = document.getElementById("previewImage");
 
-  // โหลดภาพจาก localStorage ถ้ามี
   window.addEventListener("load", () => {
     const savedImage = localStorage.getItem("uploadedImage");
     if (savedImage) {
@@ -118,10 +117,15 @@
       previewImage.style.display = "block";
       uploadBtn.style.display = "none";
     }
+
+    const saved = localStorage.getItem("timelineData");
+    if (saved) {
+      timelineData = JSON.parse(saved);
+    }
   });
 
   function triggerUpload(event) {
-    event.stopPropagation(); // ป้องกันกล่องถูกคลิกซ้อน
+    event.stopPropagation();
     fileInput.click();
   }
 
@@ -134,8 +138,6 @@
       previewImage.src = e.target.result;
       previewImage.style.display = "block";
       uploadBtn.style.display = "none";
-
-      // บันทึกภาพเป็น base64 ลง localStorage
       localStorage.setItem("uploadedImage", e.target.result);
     };
     reader.readAsDataURL(file);
@@ -148,20 +150,14 @@
     }
   }
 
-  // ฟังก์ชัน Timeline
   function initChart() {
     const container = document.getElementById("timeline");
     chart = new google.visualization.Timeline(container);
     dataTable = new google.visualization.DataTable();
     dataTable.addColumn({ type: "string", id: "งาน" });
+    dataTable.addColumn({ type: "string", role: "tooltip", p: { html: true } });
     dataTable.addColumn({ type: "date", id: "เริ่ม" });
     dataTable.addColumn({ type: "date", id: "สิ้นสุด" });
-
-    const saved = localStorage.getItem("timelineData");
-    if (saved) {
-      timelineData = JSON.parse(saved);
-    }
-
     drawChart();
     renderTaskList();
   }
@@ -169,20 +165,31 @@
   function drawChart() {
     dataTable.removeRows(0, dataTable.getNumberOfRows());
     timelineData.forEach(row => {
-      dataTable.addRow([row[0], new Date(row[1]), new Date(row[2])]);
+      const [name, start, end, details, owner] = row;
+      const tooltip = `
+        <div style="padding:10px;">
+          <strong>ชื่อโปรเจกต์:</strong> ${name}<br/>
+          <strong>เจ้าของงาน:</strong> ${owner}<br/>
+          <strong>รายละเอียด:</strong><br/>${details.replace(/,/g, "<br/>")}
+        </div>`;
+      dataTable.addRow([name, tooltip, new Date(start), new Date(end)]);
     });
-    chart.draw(dataTable);
+    chart.draw(dataTable, { tooltip: { isHtml: true } });
   }
 
   function renderTaskList() {
     const container = document.getElementById("taskList");
     container.innerHTML = "<h3>รายการงาน</h3>";
     timelineData.forEach((row, index) => {
+      const [name, start, end, details, owner] = row;
       const div = document.createElement("div");
       div.className = "task-item";
       div.innerHTML = `
-        🛠️ ${row[0]} (${row[1]} ถึง ${row[2]})
-        <button onclick="deleteTask(${index})">🗑️ ลบ</button>
+        🛠️ <strong>${name}</strong><br/>
+        📅 ${start} ถึง ${end}<br/>
+        👤 เจ้าของงาน: ${owner}<br/>
+        📋 รายละเอียด: ${details}
+        <br/><button onclick="deleteTask(${index})">🗑️ ลบ</button>
       `;
       container.appendChild(div);
     });
@@ -192,8 +199,10 @@
     const name = document.getElementById("projectName").value.trim();
     const start = document.getElementById("startDate").value;
     const end = document.getElementById("endDate").value;
+    const details = document.getElementById("taskDetails").value.trim();
+    const owner = document.getElementById("ownerName").value.trim();
 
-    if (!name || !start || !end) {
+    if (!name || !start || !end || !details || !owner) {
       alert("กรุณากรอกข้อมูลให้ครบ");
       return;
     }
@@ -203,7 +212,7 @@
       return;
     }
 
-    const row = [name, start, end];
+    const row = [name, start, end, details, owner];
     timelineData.push(row);
     localStorage.setItem("timelineData", JSON.stringify(timelineData));
     drawChart();
@@ -225,17 +234,17 @@
     document.getElementById("projectName").value = "";
     document.getElementById("startDate").value = "";
     document.getElementById("endDate").value = "";
+    document.getElementById("taskDetails").value = "";
+    document.getElementById("ownerName").value = "";
   }
 
   function closeForm() {
     document.getElementById("formSection").style.display = "none";
   }
 
-  // เปิดฟอร์มเพิ่มงานครั้งแรกเมื่อคลิกหน้าเว็บ (ครั้งเดียว)
   document.addEventListener("click", function () {
     document.getElementById("formSection").style.display = "block";
   }, { once: true });
-
 </script>
 
 </body>
