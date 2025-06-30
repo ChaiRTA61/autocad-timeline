@@ -76,6 +76,8 @@
       border: 1px solid #ddd;
       border-radius: 6px;
     }
+
+    ol { padding-left: 20px; }
   </style>
 </head>
 <body>
@@ -93,11 +95,14 @@
   <label>ชื่อโปรเจกต์: <input type="text" id="projectName"></label>
   <label>วันที่เริ่ม: <input type="date" id="startDate"></label>
   <label>วันที่สิ้นสุด: <input type="date" id="endDate"></label>
-  <label>รายละเอียดการดำเนินงาน: <input type="text" id="taskDetails" placeholder="ขั้นตอนที่ 1,2,3"></label>
+  <label>รายละเอียดการดำเนินงาน: <input type="text" id="taskDetails" placeholder="ขั้นตอนที่ 1;2;3"></label>
   <label>ชื่อเจ้าของงาน: <input type="text" id="ownerName" placeholder="ชื่อเจ้าของงาน"></label>
   <button onclick="addToTimeline()">เพิ่มงาน</button>
   <button onclick="closeForm()">ปิด</button>
 </div>
+
+<h3>📥 อัปโหลดข้อมูลด้วย CSV</h3>
+<input type="file" id="csvFile" accept=".csv" onchange="handleCSVUpload(event)" />
 
 <div id="timeline"></div>
 <div id="taskList"></div>
@@ -170,14 +175,13 @@
     dataTable.removeRows(0, dataTable.getNumberOfRows());
     timelineData.forEach(row => {
       const [name, start, end, details, owner] = row;
-
       const tooltip = `
         <div style="padding:10px; font-size:14px;">
           <strong>📌 ชื่องาน:</strong> ${name}<br/>
           <strong>👤 เจ้าของงาน:</strong> ${owner}<br/>
-          <strong>📋 รายละเอียด:</strong><br/>${details.replace(/,/g, "<br/>")}
+          <strong>📋 รายละเอียด:</strong>
+          <ol>${details.split(';').map(item => `<li>${item.trim()}</li>`).join('')}</ol>
         </div>`;
-
       dataTable.addRow([name, tooltip, new Date(start), new Date(end)]);
     });
     chart.draw(dataTable, { tooltip: { isHtml: true } });
@@ -194,7 +198,7 @@
         🛠️ <strong>${name}</strong><br/>
         📅 ${start} ถึง ${end}<br/>
         👤 เจ้าของงาน: ${owner}<br/>
-        📋 รายละเอียด: ${details}
+        📋 รายละเอียด:<br/> <ol>${details.split(';').map(item => `<li>${item.trim()}</li>`).join('')}</ol>
         <br/><button onclick="deleteTask(${index})">🗑️ ลบ</button>
       `;
       container.appendChild(div);
@@ -251,6 +255,26 @@
   document.addEventListener("click", function () {
     document.getElementById("formSection").style.display = "block";
   }, { once: true });
+
+  function handleCSVUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const lines = e.target.result.trim().split('\n');
+      const rows = lines.slice(1); // ข้าม header
+      rows.forEach(row => {
+        const [index, name, details, start, end] = row.split(',');
+        const newRow = [name, start, end, details, "เจ้าของไม่ระบุ"];
+        timelineData.push(newRow);
+      });
+      localStorage.setItem("timelineData", JSON.stringify(timelineData));
+      drawChart();
+      renderTaskList();
+    };
+    reader.readAsText(file);
+  }
 </script>
 
 </body>
