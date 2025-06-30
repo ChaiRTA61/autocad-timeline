@@ -123,9 +123,12 @@
 
     const saved = localStorage.getItem("timelineData");
     if (saved) {
+      // เมื่อโหลดข้อมูลจาก localStorage ให้แปลงวันที่กลับเป็น Date object
+      // หรือเก็บเป็น string ไว้แล้วแปลงเมื่อจะนำไปใช้กับ new Date() ใน drawChart
+      // ในที่นี้เลือกเก็บเป็น string เหมือนเดิมเพื่อให้สอดคล้องกับ input date
       timelineData = JSON.parse(saved);
     }
-    initChart();
+    initChart(); // เรียก initChart อีกครั้งเพื่อให้ chart ถูกวาดหลังจากโหลดข้อมูล
   });
 
   function triggerUpload(event) {
@@ -167,9 +170,18 @@
   }
 
   function drawChart() {
-    dataTable.removeRows(0, dataTable.getNumberOfRows());
+    // ลบแถวเก่าทั้งหมดก่อนเพิ่มแถวใหม่
+    if (dataTable.getNumberOfRows() > 0) {
+      dataTable.removeRows(0, dataTable.getNumberOfRows());
+    }
+    
     timelineData.forEach(row => {
-      const [name, start, end, details, owner] = row;
+      // เข้าถึงข้อมูลโดยใช้ index เพื่อความแน่ใจ
+      const name = row[0]; // ชื่อโปรเจกต์
+      const start = row[1]; // วันที่เริ่ม (string)
+      const end = row[2]; // วันที่สิ้นสุด (string)
+      const details = row[3]; // รายละเอียดการดำเนินงาน
+      const owner = row[4]; // ชื่อเจ้าของงาน
 
       const tooltip = `
         <div style="padding:10px; font-size:14px;">
@@ -187,7 +199,12 @@
     const container = document.getElementById("taskList");
     container.innerHTML = "<h3>รายการงาน</h3>";
     timelineData.forEach((row, index) => {
-      const [name, start, end, details, owner] = row;
+      const name = row[0];
+      const start = row[1];
+      const end = row[2];
+      const details = row[3];
+      const owner = row[4];
+
       const div = document.createElement("div");
       div.className = "task-item";
       div.innerHTML = `
@@ -218,6 +235,7 @@
       return;
     }
 
+    // จัดเก็บข้อมูลตามลำดับ: [ชื่อโปรเจกต์, วันที่เริ่ม, วันที่สิ้นสุด, รายละเอียด, เจ้าของงาน]
     const row = [name, start, end, details, owner];
     timelineData.push(row);
     localStorage.setItem("timelineData", JSON.stringify(timelineData));
@@ -248,9 +266,13 @@
     document.getElementById("formSection").style.display = "none";
   }
 
-  document.addEventListener("click", function () {
-    document.getElementById("formSection").style.display = "block";
-  }, { once: true });
+  // แก้ไขให้ formSection แสดงขึ้นมาเมื่อคลิกที่ใดก็ได้ครั้งแรก
+  document.addEventListener("click", function (event) {
+    // ตรวจสอบว่าไม่ได้คลิกภายในฟอร์มเอง
+    if (!document.getElementById("formSection").contains(event.target) && event.target.id !== "uploadBtn" && event.target.id !== "fileInput" && event.target.id !== "previewImage") {
+        document.getElementById("formSection").style.display = "block";
+    }
+  }, { once: true }); // ให้ทำงานแค่ครั้งเดียว
 </script>
 
 </body>
