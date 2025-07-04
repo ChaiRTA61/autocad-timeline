@@ -47,11 +47,13 @@
     fetch("data.csv")
       .then(response => response.text())
       .then(csv => {
-        const lines = csv.split("\n").slice(1);
+        const lines = csv.trim().split("\n").slice(1);
         for (let line of lines) {
           if (!line.trim()) continue;
-          const [index, name, details, start, end, owner] = line.split(",");
-          if (!name || !start || !end || !details || !owner) continue;
+          // แยกด้วย comma ระวังเครื่องหมาย " (แก้ไขตามความเหมาะสมถ้า needed)
+          const parts = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+          if (!parts || parts.length < 6) continue;
+          const [index, name, details, start, end, owner] = parts;
           timelineData.push([
             name.replace(/"/g, "").trim(),
             start.trim(),
@@ -62,6 +64,10 @@
         }
         drawChart();
         renderTaskList();
+      })
+      .catch(err => {
+        console.error("โหลดไฟล์ CSV ไม่ได้:", err);
+        alert("ไม่พบไฟล์ data.csv หรือเกิดข้อผิดพลาดในการโหลดข้อมูล");
       });
   }
 
