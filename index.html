@@ -81,10 +81,8 @@
   <img id="previewImage" alt="Preview Image">
 </div>
 
-<!-- ย้ายกล่อง timeline มาอยู่ต่อท้าย uploadBox -->
 <div id="timeline"></div>
 
-<!-- ปุ่มซ่อน/โชว์ และรายการงาน + ปุ่ม CSV ต่อท้าย timeline -->
 <div id="taskSection" style="margin-top:20px;">
   <button id="toggleTaskBtn" onclick="toggleTaskSection()">แสดง/ซ่อน รายการงานและ CSV</button>
   
@@ -131,8 +129,9 @@
     if (saved) {
       timelineData = JSON.parse(saved);
     }
-    initChart();
 
+    initChart();
+    loadSavedFormValues(); // โหลดค่าฟอร์มที่กรอกไว้
     document.getElementById("taskSection").style.display = "block";
   });
 
@@ -242,11 +241,10 @@
   }
 
   function clearInputs() {
-    document.getElementById("projectName").value = "";
-    document.getElementById("startDate").value = "";
-    document.getElementById("endDate").value = "";
-    document.getElementById("taskDetails").value = "";
-    document.getElementById("ownerName").value = "";
+    ["projectName", "startDate", "endDate", "taskDetails", "ownerName"].forEach(id => {
+      document.getElementById(id).value = "";
+      localStorage.removeItem("form_" + id);
+    });
   }
 
   function closeForm() {
@@ -301,11 +299,25 @@
 
   function toggleTaskSection() {
     const section = document.getElementById("taskSection");
-    if (section.style.display === "none" || section.style.display === "") {
-      section.style.display = "block";
-    } else {
-      section.style.display = "none";
-    }
+    section.style.display = (section.style.display === "none" || section.style.display === "") ? "block" : "none";
+  }
+
+  // บันทึกค่าช่อง input ไว้ใน localStorage ทันที
+  ["projectName", "startDate", "endDate", "taskDetails", "ownerName"].forEach(id => {
+    const input = document.getElementById(id);
+    input.addEventListener("input", () => {
+      localStorage.setItem("form_" + id, input.value);
+    });
+  });
+
+  // โหลดค่าที่เคยกรอกไว้ตอนเปิดเว็บ
+  function loadSavedFormValues() {
+    ["projectName", "startDate", "endDate", "taskDetails", "ownerName"].forEach(id => {
+      const saved = localStorage.getItem("form_" + id);
+      if (saved) {
+        document.getElementById(id).value = saved;
+      }
+    });
   }
 </script>
 
