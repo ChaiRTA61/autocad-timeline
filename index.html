@@ -1,107 +1,30 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <title>Timeline งานเขียนแบบ พร้อม Upload Image และ CSV</title>
+  <title>Timeline งานเขียนแบบพร้อมลิงก์ไฟล์</title>
   <script src="https://www.gstatic.com/charts/loader.js"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
-    #uploadBox {
-      width: 300px;
-      height: 200px;
-      background-color: black;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      position: relative;
-      border-radius: 10px;
-      overflow: hidden;
-      margin-bottom: 20px;
-      cursor: pointer;
-    }
-    #uploadBtn {
-      color: white;
-      background: transparent;
-      border: 2px dashed white;
-      padding: 10px 20px;
-      cursor: pointer;
-      border-radius: 5px;
-      font-size: 16px;
-      position: absolute;
-      z-index: 2;
-    }
-    #previewImage {
-      max-width: 100%;
-      max-height: 100%;
-      display: none;
-      cursor: pointer;
-      object-fit: cover;
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-    }
-    #fileInput, #csvInput { display: none; }
-    #formSection {
-      display: none;
-      position: fixed;
-      top: 60px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #f2f2f2;
-      border: 1px solid #ccc;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      z-index: 1000;
-      width: 300px;
-    }
-    label, input { display: block; margin: 5px 0; width: 100%; box-sizing: border-box; }
     #timeline { margin-top: 30px; }
-    #taskList { margin-top: 20px; }
-    button { margin-top: 10px; }
     .task-item {
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       background: #f9f9f9;
-      padding: 5px 10px;
-      border: 1px solid #ddd;
+      padding: 10px;
+      border: 1px solid #ccc;
       border-radius: 6px;
     }
   </style>
 </head>
 <body>
 
-<h2>📷 อัปโหลดรูปภาพ</h2>
-<div id="uploadBox" onclick="imageClick()">
-  <button id="uploadBtn" onclick="triggerUpload(event)">อัปโหลดภาพ</button>
-  <input type="file" id="fileInput" accept="image/*" onchange="handleUpload(event)">
-  <img id="previewImage" alt="Preview Image">
-</div>
+<h2>📅 งานเขียนแบบปีงบประมาณ 2568</h2>
+<p>จ.ส.ท.ชัยวัฒน์ ร่มพิกุล ตำแหน่ง ช่างเขียนแบบ ผวก.กบผ.ยย.ทบ.</p>
 
 <div id="timeline"></div>
 
-<div id="taskSection" style="margin-top:20px;">
-  <button id="toggleTaskBtn" onclick="toggleTaskSection()">แสดง/ซ่อน รายการงานและ CSV</button>
-  <div id="taskList" style="margin-top:10px;"></div>
-  <div style="margin-top: 10px;">
-    <button onclick="triggerCSV()">📥 อัปโหลด CSV</button>
-    <input type="file" id="csvInput" accept=".csv" onchange="handleCSV(event)">
-    <button onclick="downloadCSV()">📤 ดาวน์โหลด CSV</button>
-  </div>
-</div>
-
-<h2>📅 เพิ่มงานใหม่</h2>
-<div id="formSection">
-  <label>ชื่อโปรเจกต์: <input type="text" id="projectName"></label>
-  <label>วันที่เริ่ม: <input type="date" id="startDate"></label>
-  <label>วันที่สิ้นสุด: <input type="date" id="endDate"></label>
-  <label>รายละเอียดการดำเนินงาน: <input type="text" id="taskDetails"></label>
-  <label>ชื่อเจ้าของงาน: <input type="text" id="ownerName"></label>
-  <label>พาธไฟล์ในเครื่อง: <input type="text" id="filePath" placeholder="เช่น C:\\Users\\...\\ไฟล์.pdf"></label>
-  <button onclick="addToTimeline()">เพิ่มงาน</button>
-  <button onclick="closeForm()">ปิด</button>
-</div>
+<h3>📋 รายการงานทั้งหมด</h3>
+<div id="taskList"></div>
 
 <script>
   google.charts.load("current", { packages: ["timeline"] });
@@ -109,44 +32,6 @@
 
   let chart, dataTable;
   let timelineData = [];
-
-  const uploadBtn = document.getElementById("uploadBtn");
-  const fileInput = document.getElementById("fileInput");
-  const previewImage = document.getElementById("previewImage");
-
-  window.addEventListener("load", () => {
-    const savedImage = localStorage.getItem("uploadedImage");
-    if (savedImage) {
-      previewImage.src = savedImage;
-      previewImage.style.display = "block";
-      uploadBtn.style.display = "none";
-    }
-
-    const saved = localStorage.getItem("timelineData");
-    if (saved) {
-      timelineData = JSON.parse(saved);
-    }
-
-    initChart();
-    loadSavedFormValues();
-    document.getElementById("taskSection").style.display = "block";
-  });
-
-  function triggerUpload(e) { e.stopPropagation(); fileInput.click(); }
-  function imageClick() { if (previewImage.style.display === "block") fileInput.click(); }
-
-  function handleUpload(event) {
-    const file = event.target.files[0];
-    if (!file || !file.type.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      previewImage.src = e.target.result;
-      previewImage.style.display = "block";
-      uploadBtn.style.display = "none";
-      localStorage.setItem("uploadedImage", e.target.result);
-    };
-    reader.readAsDataURL(file);
-  }
 
   function initChart() {
     const container = document.getElementById("timeline");
@@ -156,22 +41,46 @@
     dataTable.addColumn({ type: "string", role: "tooltip", p: { html: true } });
     dataTable.addColumn({ type: "date", id: "เริ่ม" });
     dataTable.addColumn({ type: "date", id: "สิ้นสุด" });
-    drawChart();
-    renderTaskList();
+    loadCSV();
+  }
+
+  function loadCSV() {
+    const csvUrl = "https://github.com/ChaiRTA61/autocad-timeline/blob/main/data.csv";
+
+    fetch(csvUrl)
+      .then(response => response.text())
+      .then(csv => {
+        const lines = csv.trim().split("\n").slice(1);
+        for (let line of lines) {
+          if (!line.trim()) continue;
+          const parts = line.match(/("[^"]*"|[^,]+)/g);
+          if (!parts || parts.length < 7) continue;
+          const [index, name, details, start, end, owner, filePath] = parts.map(p => p.replace(/^"|"$/g, "").trim());
+          timelineData.push([name, start, end, details, owner, filePath]);
+        }
+        drawChart();
+        renderTaskList();
+      });
   }
 
   function drawChart() {
     const container = document.getElementById("timeline");
-    container.style.height = (timelineData.length * 50 + 50) + "px";
+    container.style.height = (timelineData.length * 60 + 60) + "px";
 
     dataTable.removeRows(0, dataTable.getNumberOfRows());
     timelineData.forEach(row => {
       const [name, start, end, details, owner, filePath] = row;
+      const fileLink = "file:///" + filePath.replace(/\\/g, "/");
+      const nameLink = `<a href="${fileLink}" target="_blank" style="color:#0066cc; text-decoration:underline">${name}</a>`;
       const steps = details.split(",").map(s => `<li>${s.trim()}</li>`).join("");
-      const tooltip = `<div style='padding:10px; font-size:14px;'><strong>📌 ชื่องาน:</strong> ${name}<br/><strong>👤 เจ้าของงาน:</strong> ${owner}<br/><strong>📋 รายละเอียด:</strong><ol>${steps}</ol></div>`;
-      const fileURL = "file:///" + filePath.replace(/\\/g, "/");
-      const link = `<a href='${fileURL}' target='_blank'>${name}</a>`;
-      dataTable.addRow([link, tooltip, new Date(start), new Date(end)]);
+      const tooltip = `
+        <div style='padding:10px;font-size:14px;'>
+          <strong>📌 ชื่องาน:</strong> ${name}<br/>
+          <strong>👤 เจ้าของงาน:</strong> ${owner}<br/>
+          <strong>📋 รายละเอียด:</strong>
+          <ol style="margin:5px 0 0 15px;">${steps}</ol>
+        </div>`;
+      dataTable.addRow([nameLink, tooltip, new Date(start), new Date(end)]);
     });
 
     chart.draw(dataTable, { tooltip: { isHtml: true } });
@@ -179,120 +88,21 @@
 
   function renderTaskList() {
     const container = document.getElementById("taskList");
-    container.innerHTML = "<h3>รายการงาน</h3>";
-    timelineData.forEach((row, index) => {
+    container.innerHTML = "";
+    timelineData.forEach(row => {
       const [name, start, end, details, owner, filePath] = row;
       const div = document.createElement("div");
       div.className = "task-item";
-      div.innerHTML = `🛠️ <strong>${name}</strong><br/>📅 ${start} ถึง ${end}<br/>👤 เจ้าของงาน: ${owner}<br/>📋 รายละเอียด: ${details}<br/>📁 ไฟล์: ${filePath}<br/><button onclick="deleteTask(${index})">🗑️ ลบ</button>`;
+      div.innerHTML = `
+        <strong>🛠️ ${name}</strong><br/>
+        📅 ${start} ถึง ${end}<br/>
+        👤 เจ้าของงาน: ${owner}<br/>
+        📋 รายละเอียด: ${details}<br/>
+        📁 พาธไฟล์: ${filePath}
+      `;
       container.appendChild(div);
     });
   }
-
-  function addToTimeline() {
-    const name = document.getElementById("projectName").value.trim();
-    const start = document.getElementById("startDate").value;
-    const end = document.getElementById("endDate").value;
-    const details = document.getElementById("taskDetails").value.trim();
-    const owner = document.getElementById("ownerName").value.trim();
-    const filePath = document.getElementById("filePath").value.trim();
-
-    if (!name || !start || !end || !details || !owner || !filePath) {
-      alert("กรุณากรอกข้อมูลให้ครบ");
-      return;
-    }
-    if (new Date(start) > new Date(end)) {
-      alert("วันที่เริ่มต้นต้องไม่เกินวันที่สิ้นสุด");
-      return;
-    }
-
-    timelineData.push([name, start, end, details, owner, filePath]);
-    localStorage.setItem("timelineData", JSON.stringify(timelineData));
-    drawChart();
-    renderTaskList();
-    clearInputs();
-    closeForm();
-  }
-
-  function deleteTask(index) {
-    if (confirm("ต้องการลบงานนี้ใช่หรือไม่?")) {
-      timelineData.splice(index, 1);
-      localStorage.setItem("timelineData", JSON.stringify(timelineData));
-      drawChart();
-      renderTaskList();
-    }
-  }
-
-  function clearInputs() {
-    ["projectName", "startDate", "endDate", "taskDetails", "ownerName", "filePath"].forEach(id => {
-      document.getElementById(id).value = "";
-      localStorage.removeItem("form_" + id);
-    });
-  }
-
-  function closeForm() {
-    document.getElementById("formSection").style.display = "none";
-  }
-
-  document.addEventListener("click", () => {
-    document.getElementById("formSection").style.display = "block";
-  }, { once: true });
-
-  function triggerCSV() {
-    document.getElementById("csvInput").click();
-  }
-
-  function handleCSV(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const lines = e.target.result.split(/\r?\n/).slice(1);
-      for (let line of lines) {
-        if (!line.trim()) continue;
-        const [index, name, details, start, end, owner, filePath] = line.split(",");
-        if (!name || !start || !end || !details || !owner || !filePath) continue;
-        timelineData.push([name.trim(), start.trim(), end.trim(), details.trim(), owner.trim(), filePath.trim()]);
-      }
-      localStorage.setItem("timelineData", JSON.stringify(timelineData));
-      drawChart();
-      renderTaskList();
-    };
-    reader.readAsText(file);
-  }
-
-  function downloadCSV() {
-    if (timelineData.length === 0) {
-      alert("ยังไม่มีข้อมูลใน Timeline");
-      return;
-    }
-    const header = ["ลำดับ", "ชื่องาน", "การดำเนินงาน", "วันเริ่ม", "วันสิ้นสุด", "เจ้าของงาน", "พาธไฟล์"];
-    const rows = timelineData.map((row, i) => [i + 1, ...row.map(val => `"${val.replace(/"/g, '""')}"`)]);
-    const csv = header.join(",") + "\n" + rows.map(r => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "timeline_export.csv";
-    link.click();
-  }
-
-  function toggleTaskSection() {
-    const section = document.getElementById("taskSection");
-    section.style.display = (section.style.display === "none" || section.style.display === "") ? "block" : "none";
-  }
-
-  function loadSavedFormValues() {
-    ["projectName", "startDate", "endDate", "taskDetails", "ownerName", "filePath"].forEach(id => {
-      const saved = localStorage.getItem("form_" + id);
-      if (saved) document.getElementById(id).value = saved;
-    });
-  }
-
-  ["projectName", "startDate", "endDate", "taskDetails", "ownerName", "filePath"].forEach(id => {
-    const input = document.getElementById(id);
-    input.addEventListener("input", () => localStorage.setItem("form_" + id, input.value));
-  });
 </script>
 
 </body>
