@@ -84,6 +84,14 @@
           <ol style="margin:5px 0 0 15px;">${steps}</ol>
         </div>`;
       dataTable.addRow([name, tooltip, new Date(start), new Date(end)]);
+
+      // คำนวณความสูงอัตโนมัติ (50px ต่องาน)
+const timelineContainer = document.getElementById("timeline");
+const rowHeight = 50; // ความสูงต่อรายการ (ประมาณ)
+const padding = 50;   // เผื่อ margin/delay
+const requiredHeight = timelineData.length * rowHeight + padding;
+timelineContainer.style.height = requiredHeight + "px";
+
     });
     chart.draw(dataTable, { tooltip: { isHtml: true } });
   }
