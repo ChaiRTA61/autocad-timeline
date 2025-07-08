@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="th">
+<html>
 <head>
   <meta charset="UTF-8" />
-  <title>Timeline งานเขียนแบบพร้อมลิงก์ไฟล์</title>
+  <title>Timeline จาก CSV บน GitHub</title>
   <script src="https://www.gstatic.com/charts/loader.js"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
-    #timeline { margin-top: 30px; }
+    #timeline { height: 500px; margin-top: 30px; }
     .task-item {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       background: #f9f9f9;
       padding: 10px;
       border: 1px solid #ccc;
@@ -18,11 +18,9 @@
 </head>
 <body>
 
-<h2>📅 งานเขียนแบบปีงบประมาณ 2568</h2>
-<p>จ.ส.ท.ชัยวัฒน์ ร่มพิกุล ตำแหน่ง ช่างเขียนแบบ ผวก.กบผ.ยย.ทบ.</p>
-
+<h2>📅 งานเขียนแบบปีงบประมาณ 2568       จ.ส.ท.ชัยวัฒน์ ร่มพิกุล ตำแหน่ง ช่างเขียนแบบ ผวก.กบผ.ยย.ทบ.</h2>
 <div id="timeline"></div>
-
+  
 <h3>📋 รายการงานทั้งหมด</h3>
 <div id="taskList"></div>
 
@@ -41,67 +39,75 @@
     dataTable.addColumn({ type: "string", role: "tooltip", p: { html: true } });
     dataTable.addColumn({ type: "date", id: "เริ่ม" });
     dataTable.addColumn({ type: "date", id: "สิ้นสุด" });
+
     loadCSV();
   }
 
   function loadCSV() {
-    const csvUrl = "https://raw.githubusercontent.com/ChaiRTA61/autocad-timeline/main/data.csv";
-
-    fetch(csvUrl)
+    fetch("data.csv")
       .then(response => response.text())
       .then(csv => {
         const lines = csv.trim().split("\n").slice(1);
         for (let line of lines) {
           if (!line.trim()) continue;
-          const parts = line.match(/("[^"]*"|[^,]+)/g);
-          if (!parts || parts.length < 7) continue;
-          const [index, name, details, start, end, owner, filePath] = parts.map(p => p.replace(/^"|"$/g, "").trim());
-          timelineData.push([name, start, end, details, owner, filePath]);
+          // แยกด้วย comma ระวังเครื่องหมาย " (แก้ไขตามความเหมาะสมถ้า needed)
+          const parts = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+          if (!parts || parts.length < 6) continue;
+          const [index, name, details, start, end, owner] = parts;
+          timelineData.push([
+            name.replace(/"/g, "").trim(),
+            start.trim(),
+            end.trim(),
+            details.replace(/"/g, "").trim(),
+            owner.replace(/"/g, "").trim()
+          ]);
         }
         drawChart();
         renderTaskList();
+      })
+      .catch(err => {
+        console.error("โหลดไฟล์ CSV ไม่ได้:", err);
+        alert("ไม่พบไฟล์ data.csv หรือเกิดข้อผิดพลาดในการโหลดข้อมูล");
       });
   }
 
   function drawChart() {
-  const container = document.getElementById("timeline");
-  container.style.height = (timelineData.length * 60 + 60) + "px";
+    dataTable.removeRows(0, dataTable.getNumberOfRows());
+    timelineData.forEach(row => {
+      const [name, start, end, details, owner] = row;
+      const steps = details.split(",").map(s => `<li>${s.trim()}</li>`).join("");
+      const tooltip = `
+        <div style="padding:10px;font-size:14px;">
+          <strong>📌 ชื่องาน:</strong> ${name}<br/>
+          <strong>👤 เจ้าของงาน:</strong> ${owner}<br/>
+          <strong>📋 รายละเอียด:</strong>
+          <ol style="margin:5px 0 0 15px;">${steps}</ol>
+        </div>`;
+      dataTable.addRow([name, tooltip, new Date(start), new Date(end)]);
 
-  dataTable.removeRows(0, dataTable.getNumberOfRows());
-  timelineData.forEach(row => {
-    const [name, start, end, details, owner, filePath] = row;
-    const steps = details.split(",").map(s => `<li>${s.trim()}</li>`).join("");
-    const fileLink = "file:///" + filePath.replace(/\\/g, "/");
+      // คำนวณความสูงอัตโนมัติ (50px ต่องาน)
+const timelineContainer = document.getElementById("timeline");
+const rowHeight = 50; // ความสูงต่อรายการ (ประมาณ)
+const padding = 50;   // เผื่อ margin/delay
+const requiredHeight = timelineData.length * rowHeight + padding;
+timelineContainer.style.height = requiredHeight + "px";
 
-    const tooltip = `
-      <div style='padding:10px;font-size:18px;'>
-        <strong>📌 ชื่องาน:</strong> ${name}<br/>
-        <strong>👤 เจ้าของงาน:</strong> ${owner}<br/>
-        <strong>📋 รายละเอียด:</strong>
-        <ol style="margin:5px 0 0 15px;">${steps}</ol>
-        <strong>📁 ไฟล์:</strong> <a href="${fileLink}" target="_blank">${filePath}</a>
-      </div>`;
-    
-    // ชื่อไม่ใช้ <a> แล้ว
-    dataTable.addRow([name, tooltip, new Date(start), new Date(end)]);
-  });
-
-  chart.draw(dataTable, { tooltip: { isHtml: true } });
-}
+    });
+    chart.draw(dataTable, { tooltip: { isHtml: true } });
+  }
 
   function renderTaskList() {
     const container = document.getElementById("taskList");
     container.innerHTML = "";
-    timelineData.forEach(row => {
-      const [name, start, end, details, owner, filePath] = row;
+    timelineData.forEach((row, i) => {
+      const [name, start, end, details, owner] = row;
       const div = document.createElement("div");
       div.className = "task-item";
       div.innerHTML = `
-        <strong>🛠️ ${name}</strong><br/>
+        <strong>${name}</strong><br/>
         📅 ${start} ถึง ${end}<br/>
         👤 เจ้าของงาน: ${owner}<br/>
-        📋 รายละเอียด: ${details}<br/>
-        📁 พาธไฟล์: ${filePath}
+        📋 รายละเอียด: ${details}
       `;
       container.appendChild(div);
     });
