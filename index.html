@@ -64,27 +64,30 @@
   }
 
   function drawChart() {
-    const container = document.getElementById("timeline");
-    container.style.height = (timelineData.length * 60 + 60) + "px";
+  const container = document.getElementById("timeline");
+  container.style.height = (timelineData.length * 60 + 60) + "px";
 
-    dataTable.removeRows(0, dataTable.getNumberOfRows());
-    timelineData.forEach(row => {
-      const [name, start, end, details, owner, filePath] = row;
-      const fileLink = "file:///" + filePath.replace(/\\/g, "/");
-      const nameLink = `<a href="${fileLink}" target="_blank" style="color:#0066cc; text-decoration:underline">${name}</a>`;
-      const steps = details.split(",").map(s => `<li>${s.trim()}</li>`).join("");
-      const tooltip = `
-        <div style='padding:10px;font-size:14px;'>
-          <strong>📌 ชื่องาน:</strong> ${name}<br/>
-          <strong>👤 เจ้าของงาน:</strong> ${owner}<br/>
-          <strong>📋 รายละเอียด:</strong>
-          <ol style="margin:5px 0 0 15px;">${steps}</ol>
-        </div>`;
-      dataTable.addRow([nameLink, tooltip, new Date(start), new Date(end)]);
-    });
+  dataTable.removeRows(0, dataTable.getNumberOfRows());
+  timelineData.forEach(row => {
+    const [name, start, end, details, owner, filePath] = row;
+    const steps = details.split(",").map(s => `<li>${s.trim()}</li>`).join("");
+    const fileLink = "file:///" + filePath.replace(/\\/g, "/");
 
-    chart.draw(dataTable, { tooltip: { isHtml: true } });
-  }
+    const tooltip = `
+      <div style='padding:10px;font-size:14px;'>
+        <strong>📌 ชื่องาน:</strong> ${name}<br/>
+        <strong>👤 เจ้าของงาน:</strong> ${owner}<br/>
+        <strong>📋 รายละเอียด:</strong>
+        <ol style="margin:5px 0 0 15px;">${steps}</ol>
+        <strong>📁 ไฟล์:</strong> <a href="${fileLink}" target="_blank">${filePath}</a>
+      </div>`;
+    
+    // ชื่อไม่ใช้ <a> แล้ว
+    dataTable.addRow([name, tooltip, new Date(start), new Date(end)]);
+  });
+
+  chart.draw(dataTable, { tooltip: { isHtml: true } });
+}
 
   function renderTaskList() {
     const container = document.getElementById("taskList");
