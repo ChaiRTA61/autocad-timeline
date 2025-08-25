@@ -19,45 +19,17 @@
       border: 1px solid #ccc;
       border-radius: 6px;
     }
-
-    /* ✅ ตั้งค่ากระดาษ A4 แนวนอน */
-    @page {
-      size: A4 landscape;
-      margin: 10mm;
-    }
-    @media print {
-      body {
-        margin: 0;
-        font-size: 12px;
-      }
-      .page {
-        page-break-after: always; /* บังคับแยกเป็นหน้า */
-      }
-      #timeline {
-        width: 100%;
-        height: auto !important;
-      }
-    }
-
-    h2, h3 {
-      margin-top: 0;
-    }
   </style>
 </head>
 <body>
 
-<!-- ✅ ส่วนที่ 1 : Timeline -->
-<div class="page">
-  <h2>📅 งานเขียนแบบปีงบประมาณ 2568</h2>
-  <p>จ.ส.ท.ชัยวัฒน์ ร่มพิกุล ตำแหน่ง ช่างเขียนแบบ ผวก.กบผ.ยย.ทบ.</p>
-  <div id="timeline"></div>
-</div>
+<h2>📅 งานเขียนแบบปีงบประมาณ 2568</h2>
+<p>จ.ส.ท.ชัยวัฒน์ ร่มพิกุล ตำแหน่ง ช่างเขียนแบบ ผวก.กบผ.ยย.ทบ.</p>
 
-<!-- ✅ ส่วนที่ 2 : รายละเอียดงาน -->
-<div class="page">
-  <h3>📋 รายการงานทั้งหมด</h3>
-  <div id="taskList"></div>
-</div>
+<div id="timeline"></div>
+
+<h3>📋 รายการงานทั้งหมด</h3>
+<div id="taskList"></div>
 
 <script>
   google.charts.load("current", { packages: ["timeline"] });
@@ -107,7 +79,7 @@
 
   function drawChart() {
     const container = document.getElementById("timeline");
-    container.style.height = (timelineData.length * 50 + 100) + "px";
+    container.style.height = (timelineData.length * 60 + 60) + "px";
 
     dataTable.removeRows(0, dataTable.getNumberOfRows());
 
@@ -125,10 +97,7 @@
       dataTable.addRow([displayName, tooltip, new Date(start), new Date(end)]);
     });
 
-    chart.draw(dataTable, { 
-      tooltip: { isHtml: true },
-      timeline: { showRowLabels: true },
-    });
+    chart.draw(dataTable, { tooltip: { isHtml: true } });
   }
 
   function renderTaskList() {
