@@ -19,6 +19,22 @@
       border: 1px solid #ccc;
       border-radius: 6px;
     }
+
+    /* ✅ กำหนดสำหรับการพิมพ์เป็น A4 แนวนอน */
+    @page {
+      size: A4 landscape;
+      margin: 10mm;
+    }
+    @media print {
+      body {
+        margin: 0;
+        font-size: 12px;
+      }
+      #timeline {
+        width: 100%;
+        height: auto !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -79,7 +95,7 @@
 
   function drawChart() {
     const container = document.getElementById("timeline");
-    container.style.height = (timelineData.length * 60 + 60) + "px";
+    container.style.height = (timelineData.length * 50 + 100) + "px";
 
     dataTable.removeRows(0, dataTable.getNumberOfRows());
 
@@ -97,7 +113,10 @@
       dataTable.addRow([displayName, tooltip, new Date(start), new Date(end)]);
     });
 
-    chart.draw(dataTable, { tooltip: { isHtml: true } });
+    chart.draw(dataTable, { 
+      tooltip: { isHtml: true },
+      timeline: { showRowLabels: true },
+    });
   }
 
   function renderTaskList() {
