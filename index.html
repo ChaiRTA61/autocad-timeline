@@ -1,31 +1,79 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Timeline งานเขียนแบบ 2568</title>
   <script src="https://www.gstatic.com/charts/loader.js"></script>
   <style>
+    /* --- Layout สำหรับพิมพ์ A2 --- */
+    @page {
+      size: A2 portrait;
+      margin: 10mm;
+    }
     body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
+      font-family: "Sarabun", Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #fff;
+      color: #222;
+      width: 420mm;   /* A2 กว้าง */
+      min-height: 594mm; /* A2 สูง */
     }
+
+    h2 {
+      text-align: center;
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
+
     #timeline {
-      margin-top: 30px;
-    }
-    .task-item {
-      margin-bottom: 10px;
-      background: #f9f9f9;
+      margin: 20px auto;
+      border: 2px solid #333;
+      border-radius: 10px;
       padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      background: #fafafa;
+    }
+
+    h3 {
+      margin-top: 40px;
+      font-size: 22px;
+      border-bottom: 2px solid #444;
+      padding-bottom: 5px;
+    }
+
+    #taskList {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .task-item {
+      border: 1px solid #bbb;
+      border-radius: 8px;
+      padding: 10px;
+      background: #fdfdfd;
+      font-size: 14px;
+      box-shadow: 1px 1px 4px rgba(0,0,0,0.1);
+    }
+    .task-item strong {
+      color: #333;
+    }
+
+    /* สำหรับพิมพ์ */
+    @media print {
+      body {
+        background: white;
+      }
+      #timeline {
+        page-break-after: always;
+      }
     }
   </style>
 </head>
 <body>
 
 <h2>📅 งานเขียนแบบปีงบประมาณ 2568 (1 ต.ค.67 - 31 ก.ย.68)</h2>
-  <img src="profile.jpg" alt="รูปภาพบุคคล" width="200" height="250">
-<p>จ.ส.ท.ชัยวัฒน์ ร่มพิกุล ตำแหน่ง ช่างเขียนแบบ ผวก.กบผ.ยย.ทบ.</p>
 
 <div id="timeline"></div>
 
@@ -80,7 +128,7 @@
 
   function drawChart() {
     const container = document.getElementById("timeline");
-    container.style.height = (timelineData.length * 60 + 60) + "px";
+    container.style.height = (timelineData.length * 50 + 80) + "px";
 
     dataTable.removeRows(0, dataTable.getNumberOfRows());
 
@@ -109,11 +157,11 @@
       const div = document.createElement("div");
       div.className = "task-item";
       div.innerHTML = `
-        <strong>🔢 ลำดับ: ${index}</strong><br/>
+        <strong>🔢 ${index}</strong><br/>
         🛠️ <strong>${name}</strong><br/>
-        📅 ${start} ถึง ${end}<br/>
-        👤 เจ้าของงาน: ${owner}<br/>
-        📋 รายละเอียด: ${details}
+        📅 ${start} - ${end}<br/>
+        👤 ${owner}<br/>
+        📋 ${details}
       `;
       container.appendChild(div);
     });
@@ -122,5 +170,3 @@
 
 </body>
 </html>
-
-
