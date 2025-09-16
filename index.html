@@ -5,171 +5,129 @@
   <title>Timeline งานเขียนแบบ 2568</title>
   <script src="https://www.gstatic.com/charts/loader.js"></script>
   <style>
-    :root {
-      --bg: #f4f6f9;
-      --card-bg: rgba(255,255,255,0.7);
-      --text: #222;
-      --accent: #4e73df;
-      --done: #1cc88a;
-      --active: #36b9cc;
-      --pending: #f6c23e;
-    }
-    body.dark {
-      --bg: #1e1e2f;
-      --card-bg: rgba(40,40,55,0.8);
-      --text: #f4f4f4;
-      --accent: #7289da;
+    /* --- Layout สำหรับพิมพ์ A2 --- */
+    @page {
+      size: A2 portrait;
+      margin: 10mm;
     }
     body {
       font-family: "Sarabun", Arial, sans-serif;
       margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      transition: background 0.3s, color 0.3s;
+      padding: 20px;
+      background: linear-gradient(135deg, #eef2f7, #d9e4f5);
+      color: #222;
+      width: 420mm;   /* A2 กว้าง */
+      min-height: 594mm; /* A2 สูง */
     }
 
-    header {
-      background: linear-gradient(135deg, var(--accent), var(--active));
-      color: white;
-      padding: 25px;
+    h2 {
       text-align: center;
-      border-radius: 0 0 20px 20px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    }
-    header h1 {
-      margin: 0;
       font-size: 32px;
-    }
-    header h2 {
-      margin: 8px 0 0;
-      font-size: 18px;
-      opacity: 0.9;
-    }
-
-    .controls {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      padding: 15px;
-      flex-wrap: wrap;
-    }
-    .controls input, .controls select {
-      padding: 10px 14px;
-      border: none;
-      border-radius: 12px;
-      font-size: 14px;
-      outline: none;
-      background: var(--card-bg);
-      color: var(--text);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      backdrop-filter: blur(10px);
+      margin: 10px 0;
+      color: #1a237e;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
     }
 
     #timeline {
       margin: 20px auto;
-      border-radius: 12px;
-      padding: 15px;
-      background: var(--card-bg);
-      width: 95%;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      border-radius: 16px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
       backdrop-filter: blur(10px);
+      transition: transform 0.3s ease;
+    }
+    #timeline:hover {
+      transform: scale(1.01);
     }
 
     h3 {
-      text-align: center;
       margin-top: 40px;
       font-size: 24px;
+      border-left: 6px solid #3949ab;
+      padding-left: 10px;
+      color: #3949ab;
+    }
+
+    /* 🔎 Search box */
+    #searchBox {
+      display: block;
+      width: 40%;
+      margin: 15px auto;
+      padding: 10px 15px;
+      border-radius: 30px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    #searchBox:focus {
+      border-color: #3949ab;
+      box-shadow: 0 2px 10px rgba(57,73,171,0.3);
     }
 
     #taskList {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 20px;
-      padding: 20px;
+      margin-top: 20px;
     }
+
     .task-item {
-      border-radius: 15px;
-      padding: 20px;
-      background: var(--card-bg);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-      transition: transform 0.25s, box-shadow 0.25s;
-      backdrop-filter: blur(12px);
+      border-radius: 14px;
+      padding: 15px;
+      background: linear-gradient(135deg, #ffffff, #f1f4ff);
+      font-size: 14px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      transition: all 0.3s ease;
       position: relative;
       overflow: hidden;
     }
     .task-item:hover {
-      transform: translateY(-6px) scale(1.02);
-      box-shadow: 0 8px 18px rgba(0,0,0,0.3);
+      transform: translateY(-6px);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.15);
     }
-    .status {
-      display: inline-block;
-      margin-top: 10px;
-      padding: 4px 10px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: bold;
-      color: white;
-    }
-    .status.pending { background: var(--pending); }
-    .status.active { background: var(--active); }
-    .status.done { background: var(--done); }
-
-    .progress {
-      margin-top: 10px;
-      width: 100%;
-      height: 8px;
-      border-radius: 6px;
-      background: rgba(200,200,200,0.3);
-      overflow: hidden;
-    }
-    .progress-bar {
-      height: 100%;
-      transition: width 0.4s ease;
+    .task-item::before {
+      content: "";
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(57,73,171,0.1), transparent 70%);
+      transform: rotate(25deg);
     }
 
-    /* Floating button */
-    .fab {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: var(--accent);
-      color: white;
-      width: 55px;
-      height: 55px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 26px;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      transition: background 0.3s;
+    .task-item strong {
+      color: #1a237e;
     }
-    .fab:hover { background: var(--active); }
+
+    /* สำหรับพิมพ์ */
+    @media print {
+      body {
+        background: white;
+      }
+      #timeline {
+        page-break-after: always;
+      }
+      #searchBox {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>
   
-<header>
-  <h1>🚀 Timeline Interactive 2568</h1>
-  <h2>งานเขียนแบบ • จ.ส.ท.ชัยวัฒน์ ร่มพิกุล</h2>
-</header>
-
-<div class="controls">
-  <input type="text" id="searchBox" placeholder="🔍 ค้นหางาน...">
-  <select id="filterOwner"><option value="">👤 เลือกเจ้าของงาน</option></select>
-  <select id="sortBy">
-    <option value="start">📅 เรียงตามวันเริ่ม</option>
-    <option value="end">📅 เรียงตามวันสิ้นสุด</option>
-  </select>
-</div>
+<h2>จ.ส.ท.ชัยวัฒน์ ร่มพิกุล</h2>
+<h2>📅 งานเขียนแบบปีงบประมาณ 2568 (1 ต.ค.67 - 30 ก.ย.68)</h2>
 
 <div id="timeline"></div>
 
 <h3>📋 รายการงานทั้งหมด</h3>
-<div id="taskList"></div>
+<input type="text" id="searchBox" placeholder="🔎 ค้นหางานหรือชื่อเจ้าของงาน...">
 
-<div class="fab" id="fab">☰</div>
+<div id="taskList"></div>
 
 <script>
   google.charts.load("current", { packages: ["timeline"] });
@@ -177,116 +135,103 @@
 
   let chart, dataTable;
   let timelineData = [];
-  let originalData = [];
-  let colors = ["#4e73df","#1cc88a","#36b9cc","#f6c23e","#e74a3b","#858796"];
 
   function initChart() {
-    chart = new google.visualization.Timeline(document.getElementById("timeline"));
+    const container = document.getElementById("timeline");
+    chart = new google.visualization.Timeline(container);
     dataTable = new google.visualization.DataTable();
-    dataTable.addColumn("string","งาน");
-    dataTable.addColumn("string","tooltip");
-    dataTable.addColumn("date","เริ่ม");
-    dataTable.addColumn("date","สิ้นสุด");
+    dataTable.addColumn({ type: "string", id: "งาน" });
+    dataTable.addColumn({ type: "string", role: "tooltip", p: { html: true } });
+    dataTable.addColumn({ type: "date", id: "เริ่ม" });
+    dataTable.addColumn({ type: "date", id: "สิ้นสุด" });
     loadCSV();
   }
 
   function loadCSV() {
     fetch("data.csv")
-      .then(r=>r.text())
-      .then(csv=>{
+      .then(response => response.text())
+      .then(csv => {
         const lines = csv.trim().split("\n").slice(1);
-        for(let line of lines){
-          if(!line.trim()) continue;
-          const parts=line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-          if(!parts||parts.length<6) continue;
-          const [i,n,d,s,e,o]=parts;
-          originalData.push([i.trim(),n.replace(/"/g,"").trim(),s.trim(),e.trim(),d.replace(/"/g,"").trim(),o.replace(/"/g,"").trim()]);
+        for (let line of lines) {
+          if (!line.trim()) continue;
+          const parts = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+          if (!parts || parts.length < 6) continue;
+          const [index, name, details, start, end, owner] = parts;
+          timelineData.push([
+            index.trim(),
+            name.replace(/"/g, "").trim(),
+            start.trim(),
+            end.trim(),
+            details.replace(/"/g, "").trim(),
+            owner.replace(/"/g, "").trim()
+          ]);
         }
-        timelineData=[...originalData];
         drawChart();
         renderTaskList();
-        fillOwners();
-        addEvents();
+      })
+      .catch(err => {
+        console.error("โหลดไฟล์ CSV ไม่ได้:", err);
+        alert("ไม่พบไฟล์ data.csv หรือเกิดข้อผิดพลาดในการโหลดข้อมูล");
       });
   }
 
-  function drawChart(){
-    const cont=document.getElementById("timeline");
-    cont.style.height=(timelineData.length*50+80)+"px";
-    dataTable.removeRows(0,dataTable.getNumberOfRows());
-    timelineData.forEach((row,i)=>{
-      const [idx,name,start,end,details,owner]=row;
-      const tooltip=`<div style="padding:10px;">
-        <b>${name}</b><br/>👤 ${owner}<br/>📅 ${start} - ${end}
-      </div>`;
-      dataTable.addRow([`${idx}. ${name}`,tooltip,new Date(start),new Date(end)]);
+  function drawChart() {
+    const container = document.getElementById("timeline");
+    container.style.height = (timelineData.length * 60 + 100) + "px";
+
+    dataTable.removeRows(0, dataTable.getNumberOfRows());
+
+    timelineData.forEach(row => {
+      const [index, name, start, end, details, owner] = row;
+      const steps = details.split(",").map(s => `<li>${s.trim()}</li>`).join("");
+      const tooltip = `
+        <div style="padding:10px;font-size:14px;">
+          <strong>📌 ชื่องาน:</strong> ${name}<br/>
+          <strong>👤 เจ้าของงาน:</strong> ${owner}<br/>
+          <strong>📋 รายละเอียด:</strong>
+          <ol style="margin:5px 0 0 15px;">${steps}</ol>
+        </div>`;
+      const displayName = `${index}. ${name}`;
+      dataTable.addRow([displayName, tooltip, new Date(start), new Date(end)]);
     });
-    chart.draw(dataTable,{tooltip:{isHtml:true},colors:colors});
-  }
 
-  function renderTaskList(){
-    const container=document.getElementById("taskList");
-    container.innerHTML="";
-    const today=new Date();
-    timelineData.forEach(row=>{
-      const [i,n,s,e,d,o]=row;
-      const sd=new Date(s), ed=new Date(e);
-      let status="pending";
-      if(today>=sd&&today<=ed) status="active";
-      if(today>ed) status="done";
-      const total=(ed-sd)/(1000*3600*24);
-      const doneDays=(today-sd)/(1000*3600*24);
-      let progress=Math.max(0,Math.min(100,(doneDays/total)*100));
-
-      const div=document.createElement("div");
-      div.className="task-item";
-      div.innerHTML=`
-        <strong>${i}. ${n}</strong><br/>
-        👤 ${o}<br/>
-        📅 ${s} - ${e}<br/>
-        📋 ${d}<br/>
-        <span class="status ${status}">${
-          status==="pending"?"⏳ รอเริ่ม":status==="active"?"🚧 กำลังทำ":"✅ เสร็จแล้ว"
-        }</span>
-        <div class="progress"><div class="progress-bar" style="width:${progress}%;background:${
-          status==="pending"?"var(--pending)":status==="active"?"var(--active)":"var(--done)"
-        }"></div></div>
-      `;
-      container.appendChild(div);
+    chart.draw(dataTable, { 
+      tooltip: { isHtml: true },
+      timeline: { showRowLabels: true, barLabelStyle: { fontSize: 12 } }
     });
   }
 
-  function fillOwners(){
-    const owners=[...new Set(originalData.map(r=>r[5]))];
-    const sel=document.getElementById("filterOwner");
-    owners.forEach(o=>{
-      const op=document.createElement("option");
-      op.value=o; op.textContent=o;
-      sel.appendChild(op);
-    });
+  function renderTaskList(filterText = "") {
+    const container = document.getElementById("taskList");
+    container.innerHTML = "";
+    timelineData
+      .filter(row => {
+        const [index, name, start, end, details, owner] = row;
+        return (
+          name.includes(filterText) ||
+          owner.includes(filterText) ||
+          details.includes(filterText) ||
+          index.includes(filterText)
+        );
+      })
+      .forEach(row => {
+        const [index, name, start, end, details, owner] = row;
+        const div = document.createElement("div");
+        div.className = "task-item";
+        div.innerHTML = `
+          <strong>🔢 ${index}</strong><br/>
+          🛠️ <strong>${name}</strong><br/>
+          📅 ${start} - ${end}<br/>
+          👤 ${owner}<br/>
+          📋 ${details}
+        `;
+        container.appendChild(div);
+      });
   }
 
-  function addEvents(){
-    document.getElementById("searchBox").addEventListener("input",e=>{
-      const k=e.target.value.toLowerCase();
-      timelineData=originalData.filter(r=>r[1].toLowerCase().includes(k)||r[5].toLowerCase().includes(k));
-      drawChart(); renderTaskList();
-    });
-    document.getElementById("filterOwner").addEventListener("change",e=>{
-      const v=e.target.value;
-      timelineData=v?originalData.filter(r=>r[5]===v):[...originalData];
-      drawChart(); renderTaskList();
-    });
-    document.getElementById("sortBy").addEventListener("change",e=>{
-      const v=e.target.value;
-      timelineData.sort((a,b)=>new Date(a[v==="start"?2:3])-new Date(b[v==="start"?2:3]));
-      drawChart(); renderTaskList();
-    });
-    document.getElementById("fab").addEventListener("click",()=>{
-      if(confirm("สลับโหมดสี?")) document.body.classList.toggle("dark");
-      window.scrollTo({top:0,behavior:"smooth"});
-    });
-  }
+  document.getElementById("searchBox").addEventListener("input", (e) => {
+    renderTaskList(e.target.value.trim());
+  });
 </script>
 
 </body>
