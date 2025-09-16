@@ -80,27 +80,78 @@
       background: linear-gradient(135deg, #ffffff, #f1f4ff);
       font-size: 14px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-      transition: all 0.3s ease;
+      transition: all 0.3s ease, box-shadow 0.4s ease;
       position: relative;
       overflow: hidden;
+      cursor: pointer;
     }
+
     .task-item:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+      transform: translateY(-6px) scale(1.03);
+      box-shadow: 0 12px 25px rgba(57,73,171,0.25);
+      border: 1px solid #3949ab;
     }
-    .task-item::before {
+
+    /* Glow effect */
+    .task-item::after {
       content: "";
       position: absolute;
       top: -50%;
       left: -50%;
       width: 200%;
       height: 200%;
-      background: radial-gradient(circle, rgba(57,73,171,0.1), transparent 70%);
-      transform: rotate(25deg);
+      background: radial-gradient(circle, rgba(57,73,171,0.15), transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 0;
+    }
+    .task-item:hover::after {
+      opacity: 1;
     }
 
-    .task-item strong {
-      color: #1a237e;
+    /* Pop-up info */
+    .popup-info {
+      position: absolute;
+      bottom: 110%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #333;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      z-index: 10;
+    }
+    .task-item:hover .popup-info {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-10px);
+    }
+
+    /* Ripple effect */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      transform: scale(0);
+      animation: ripple 0.6s linear;
+      background-color: rgba(57,73,171,0.4);
+      pointer-events: none;
+    }
+    @keyframes ripple {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+
+    /* Timeline hover highlight */
+    .timeline-highlight {
+      fill: #9fa8da !important;
+      transition: fill 0.3s ease;
     }
 
     /* สำหรับพิมพ์ */
@@ -199,6 +250,21 @@
       tooltip: { isHtml: true },
       timeline: { showRowLabels: true, barLabelStyle: { fontSize: 12 } }
     });
+
+    // Sync hover timeline -> task card
+    const bars = document.querySelectorAll("#timeline rect");
+    bars.forEach((bar, i) => {
+      bar.addEventListener("mouseenter", () => {
+        const card = document.querySelector(`.task-item[data-index="${i}"]`);
+        if (card) card.classList.add("hover-sync");
+        bar.classList.add("timeline-highlight");
+      });
+      bar.addEventListener("mouseleave", () => {
+        const card = document.querySelector(`.task-item[data-index="${i}"]`);
+        if (card) card.classList.remove("hover-sync");
+        bar.classList.remove("timeline-highlight");
+      });
+    });
   }
 
   function renderTaskList(filterText = "") {
@@ -214,17 +280,43 @@
           index.includes(filterText)
         );
       })
-      .forEach(row => {
+      .forEach((row, i) => {
         const [index, name, start, end, details, owner] = row;
         const div = document.createElement("div");
         div.className = "task-item";
+        div.dataset.index = i;
         div.innerHTML = `
           <strong>🔢 ${index}</strong><br/>
           🛠️ <strong>${name}</strong><br/>
           📅 ${start} - ${end}<br/>
           👤 ${owner}<br/>
           📋 ${details}
+          <div class="popup-info">คลิกเพื่อดูรายละเอียดเพิ่มเติม 🚀</div>
         `;
+
+        // Hover highlight timeline bar
+        div.addEventListener("mouseenter", () => {
+          const rows = document.querySelectorAll("#timeline rect");
+          if (rows[i]) rows[i].classList.add("timeline-highlight");
+        });
+        div.addEventListener("mouseleave", () => {
+          const rows = document.querySelectorAll("#timeline rect");
+          if (rows[i]) rows[i].classList.remove("timeline-highlight");
+        });
+
+        // Ripple effect
+        div.addEventListener("click", function(e) {
+          const circle = document.createElement("span");
+          circle.classList.add("ripple");
+          const rect = div.getBoundingClientRect();
+          const size = Math.max(rect.width, rect.height);
+          circle.style.width = circle.style.height = size + "px";
+          circle.style.left = e.clientX - rect.left - size / 2 + "px";
+          circle.style.top = e.clientY - rect.top - size / 2 + "px";
+          div.appendChild(circle);
+          setTimeout(() => circle.remove(), 600);
+        });
+
         container.appendChild(div);
       });
   }
