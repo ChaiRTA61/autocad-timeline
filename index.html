@@ -5,7 +5,6 @@
   <title>Timeline งานเขียนแบบ 2568</title>
   <script src="https://www.gstatic.com/charts/loader.js"></script>
   <style>
-    /* --- Layout สำหรับพิมพ์ A2 --- */
     @page {
       size: A2 portrait;
       margin: 10mm;
@@ -15,29 +14,66 @@
       font-family: "Sarabun", Arial, sans-serif;
       margin: 0;
       padding: 20px;
-      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
-      color: #222;
-      width: 420mm;   /* A2 กว้าง */
-      min-height: 594mm; /* A2 สูง */
+      width: 420mm;
+      min-height: 594mm;
+      color: #e0e0e0;
+
+      /* ไฮเทค background */
+      background: radial-gradient(circle at top left, #0f2027, #203a43, #2c5364);
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* เส้นกริดแบบไฮเทค */
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: 
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: 0;
+    }
+
+    /* เอฟเฟกต์เส้นแสงเคลื่อนไหว */
+    body::after {
+      content: "";
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: conic-gradient(from 0deg, #00f2fe, #4facfe, #00f2fe);
+      animation: rotateBG 20s linear infinite;
+      mix-blend-mode: overlay;
+      opacity: 0.08;
+      z-index: 0;
+    }
+    @keyframes rotateBG {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
     h2 {
       text-align: center;
-      font-size: 30px;
+      font-size: 32px;
       margin-bottom: 15px;
-      background: linear-gradient(90deg, #3a7bd5, #00d2ff);
+      background: linear-gradient(90deg, #00f2fe, #4facfe);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      position: relative;
+      z-index: 1;
     }
 
     #timeline {
       margin: 30px auto;
       border-radius: 15px;
       padding: 20px;
-      background: rgba(255, 255, 255, 0.4);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-      backdrop-filter: blur(8px);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+      backdrop-filter: blur(10px);
       transition: transform 0.3s ease;
+      position: relative;
+      z-index: 1;
     }
     #timeline:hover {
       transform: scale(1.01);
@@ -46,9 +82,11 @@
     h3 {
       margin-top: 40px;
       font-size: 22px;
-      border-bottom: 2px solid #444;
+      border-bottom: 2px solid #4facfe;
       padding-bottom: 5px;
-      color: #333;
+      color: #00e5ff;
+      position: relative;
+      z-index: 1;
     }
 
     #taskList {
@@ -56,45 +94,38 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 20px;
       margin-top: 20px;
+      position: relative;
+      z-index: 1;
     }
 
     .task-item {
       border-radius: 15px;
       padding: 15px;
       font-size: 14px;
-      background: rgba(255,255,255,0.5);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,0.08);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+      backdrop-filter: blur(12px);
       transition: all 0.3s ease;
       transform: translateY(0);
+      color: #f0f0f0;
     }
     .task-item:hover {
-      transform: translateY(-5px) scale(1.02);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-      background: rgba(255,255,255,0.7);
+      transform: translateY(-5px) scale(1.03);
+      box-shadow: 0 10px 25px rgba(0,255,255,0.4);
+      background: rgba(255,255,255,0.15);
     }
     .task-item strong {
-      color: #2c3e50;
+      color: #00e5ff;
     }
 
-    /* Tooltip แบบ custom */
+    /* Tooltip */
     .google-visualization-tooltip {
-      background: rgba(50,50,70,0.9) !important;
+      background: rgba(20,20,40,0.95) !important;
       color: #fff !important;
       border-radius: 10px !important;
       padding: 12px !important;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 12px rgba(0,255,255,0.3);
       font-size: 14px;
-    }
-
-    /* สำหรับพิมพ์ */
-    @media print {
-      body {
-        background: white;
-      }
-      #timeline {
-        page-break-after: always;
-      }
     }
   </style>
 </head>
@@ -108,102 +139,7 @@
 <h3>📋 รายการงานทั้งหมด</h3>
 <div id="taskList"></div>
 
-<script>
-  google.charts.load("current", { packages: ["timeline"] });
-  google.charts.setOnLoadCallback(initChart);
-
-  let chart, dataTable;
-  let timelineData = [];
-
-  function initChart() {
-    const container = document.getElementById("timeline");
-    chart = new google.visualization.Timeline(container);
-    dataTable = new google.visualization.DataTable();
-    dataTable.addColumn({ type: "string", id: "งาน" });
-    dataTable.addColumn({ type: "string", role: "tooltip", p: { html: true } });
-    dataTable.addColumn({ type: "date", id: "เริ่ม" });
-    dataTable.addColumn({ type: "date", id: "สิ้นสุด" });
-    loadCSV();
-  }
-
-  function loadCSV() {
-    fetch("data.csv")
-      .then(response => response.text())
-      .then(csv => {
-        const lines = csv.trim().split("\n").slice(1);
-        for (let line of lines) {
-          if (!line.trim()) continue;
-          const parts = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-          if (!parts || parts.length < 6) continue;
-          const [index, name, details, start, end, owner] = parts;
-          timelineData.push([
-            index.trim(),
-            name.replace(/"/g, "").trim(),
-            start.trim(),
-            end.trim(),
-            details.replace(/"/g, "").trim(),
-            owner.replace(/"/g, "").trim()
-          ]);
-        }
-        drawChart();
-        renderTaskList();
-      })
-      .catch(err => {
-        console.error("โหลดไฟล์ CSV ไม่ได้:", err);
-        alert("ไม่พบไฟล์ data.csv หรือเกิดข้อผิดพลาดในการโหลดข้อมูล");
-      });
-  }
-
-  function drawChart() {
-    const container = document.getElementById("timeline");
-    container.style.height = (timelineData.length * 50 + 80) + "px";
-
-    dataTable.removeRows(0, dataTable.getNumberOfRows());
-
-    timelineData.forEach(row => {
-      const [index, name, start, end, details, owner] = row;
-      const steps = details.split(",").map(s => `<li>${s.trim()}</li>`).join("");
-      const tooltip = `
-        <div>
-          <strong>📌 ชื่องาน:</strong> ${name}<br/>
-          <strong>👤 เจ้าของงาน:</strong> ${owner}<br/>
-          <strong>📋 รายละเอียด:</strong>
-          <ol>${steps}</ol>
-        </div>`;
-      const displayName = `${index}. ${name}`;
-      dataTable.addRow([displayName, tooltip, new Date(start), new Date(end)]);
-    });
-
-    const options = {
-      tooltip: { isHtml: true },
-      timeline: { 
-        colorByRowLabel: true,
-        showRowLabels: true,
-        barLabelStyle: { fontSize: 14, color: '#2c3e50' }
-      }
-    };
-
-    chart.draw(dataTable, options);
-  }
-
-  function renderTaskList() {
-    const container = document.getElementById("taskList");
-    container.innerHTML = "";
-    timelineData.forEach(row => {
-      const [index, name, start, end, details, owner] = row;
-      const div = document.createElement("div");
-      div.className = "task-item";
-      div.innerHTML = `
-        <strong>🔢 ${index}</strong><br/>
-        🛠️ <strong>${name}</strong><br/>
-        📅 ${start} - ${end}<br/>
-        👤 ${owner}<br/>
-        📋 ${details}
-      `;
-      container.appendChild(div);
-    });
-  }
-</script>
+<script src="timeline.js"></script>
 
 </body>
 </html>
