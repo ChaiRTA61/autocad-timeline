@@ -106,6 +106,8 @@
       transition: all 0.3s ease;
       transform: translateY(0);
       color: #f0f0f0;
+      cursor: pointer;
+      position: relative;
     }
     .task-item:hover {
       transform: translateY(-5px) scale(1.03);
@@ -114,6 +116,31 @@
     }
     .task-item strong {
       color: #00e5ff;
+    }
+
+    /* Custom tooltip สำหรับ task card */
+    .task-item .tooltip {
+      visibility: hidden;
+      opacity: 0;
+      width: 220px;
+      background-color: rgba(20,20,40,0.95);
+      color: #fff;
+      text-align: left;
+      border-radius: 10px;
+      padding: 10px;
+      position: absolute;
+      z-index: 10;
+      top: 110%;
+      left: 50%;
+      transform: translateX(-50%);
+      transition: opacity 0.3s;
+      font-size: 13px;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,255,255,0.3);
+    }
+    .task-item:hover .tooltip {
+      visibility: visible;
+      opacity: 1;
     }
 
     /* Tooltip ของ timeline */
@@ -231,10 +258,12 @@
       div.className = "task-item";
       div.innerHTML = `
         <strong>🔢 ${index}</strong><br/>
-        🛠️ <strong>${name}</strong><br/>
-        📅 ${start} - ${end}<br/>
-        👤 ${owner}<br/>
-        📋 ${details}
+        🛠️ <strong>${name}</strong>
+        <div class="tooltip">
+          📅 ${start} - ${end}<br/>
+          👤 ${owner}<br/>
+          📋 ${details}
+        </div>
       `;
       container.appendChild(div);
     });
