@@ -5,125 +5,169 @@
   <title>Timeline งานเขียนแบบ 2568</title>
   <script src="https://www.gstatic.com/charts/loader.js"></script>
   <style>
+    /* --- Layout สำหรับพิมพ์ A2 --- */
+    @page {
+      size: A2 portrait;
+      margin: 10mm;
+    }
     body {
-      font-family: "Sarabun", sans-serif;
-      margin: 20px;
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(8px);
+      font-family: "Sarabun", Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #fff;
+      color: #222;
+      width: 420mm;   /* A2 กว้าง */
+      min-height: 594mm; /* A2 สูง */
+    }
+
+    h2 {
+      text-align: center;
+      font-size: 28px;
+      margin-bottom: 20px;
     }
 
     #timeline {
-      margin-top: 30px;
+      margin: 20px auto;
+      border: 2px solid #333;
+      border-radius: 10px;
+      padding: 10px;
+      background: #fafafa;
     }
 
-    .task-list {
-      margin-top: 20px;
+    h3 {
+      margin-top: 40px;
+      font-size: 22px;
+      border-bottom: 2px solid #444;
+      padding-bottom: 5px;
+    }
+
+    #taskList {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 15px;
+      margin-top: 20px;
     }
 
-    .task-card {
-      background: rgba(255, 255, 255, 0.6);
-      border-radius: 16px;
-      padding: 15px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      position: relative;
+    .task-item {
+      border: 1px solid #bbb;
+      border-radius: 8px;
+      padding: 10px;
+      background: #fdfdfd;
+      font-size: 14px;
+      box-shadow: 1px 1px 4px rgba(0,0,0,0.1);
+    }
+    .task-item strong {
+      color: #333;
     }
 
-    .task-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-      z-index: 2;
-    }
-
-    .task-card h3 {
-      margin: 0 0 8px 0;
-      font-size: 1.1em;
-    }
-
-    .task-meta {
-      font-size: 0.9em;
-      color: #444;
+    /* สำหรับพิมพ์ */
+    @media print {
+      body {
+        background: white;
+      }
+      #timeline {
+        page-break-after: always;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>📅 Timeline งานเขียนแบบ 2568</h1>
-  <div id="timeline"></div>
-  <div class="task-list" id="task-list"></div>
+  
+<h2>จ.ส.ท.ชัยวัฒน์ ร่มพิกุล ช่างเขียนแบบ ผวก.กบผ.ยย.ทบ.</h2>
+<h2>📅 งานเขียนแบบปีงบประมาณ 2568 (1 ต.ค.67 - 30 ก.ย.68)</h2>
 
-  <script>
-    google.charts.load("current", { packages: ["timeline"] });
-    google.charts.setOnLoadCallback(init);
+<div id="timeline"></div>
 
-    let taskData = [];
+<h3>📋 รายการงานทั้งหมด</h3>
+<div id="taskList"></div>
 
-    async function init() {
-      await loadCSV();
-      drawChart();
-      renderTaskList();
-    }
+<script>
+  google.charts.load("current", { packages: ["timeline"] });
+  google.charts.setOnLoadCallback(initChart);
 
-    async function loadCSV() {
-      const response = await fetch("data.csv");
-      const csvText = await response.text();
-      const rows = csvText.trim().split("\n").map(r => r.split(","));
+  let chart, dataTable;
+  let timelineData = [];
 
-      taskData = rows.slice(1).map(row => ({
-        title: row[0],
-        owner: row[1],
-        start: new Date(row[2]),
-        end: new Date(row[3])
-      }));
-    }
+  function initChart() {
+    const container = document.getElementById("timeline");
+    chart = new google.visualization.Timeline(container);
+    dataTable = new google.visualization.DataTable();
+    dataTable.addColumn({ type: "string", id: "งาน" });
+    dataTable.addColumn({ type: "string", role: "tooltip", p: { html: true } });
+    dataTable.addColumn({ type: "date", id: "เริ่ม" });
+    dataTable.addColumn({ type: "date", id: "สิ้นสุด" });
+    loadCSV();
+  }
 
-    function renderTaskList() {
-      const container = document.getElementById("task-list");
-      container.innerHTML = "";
-
-      taskData.forEach(task => {
-        const card = document.createElement("div");
-        card.className = "task-card";
-
-        card.innerHTML = `
-          <h3>${task.title}</h3>
-          <div class="task-meta">👤 ${task.owner}</div>
-          <div class="task-meta">📅 ${task.start.toLocaleDateString()} - ${task.end.toLocaleDateString()}</div>
-        `;
-
-        container.appendChild(card);
+  function loadCSV() {
+    fetch("data.csv")
+      .then(response => response.text())
+      .then(csv => {
+        const lines = csv.trim().split("\n").slice(1);
+        for (let line of lines) {
+          if (!line.trim()) continue;
+          const parts = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+          if (!parts || parts.length < 6) continue;
+          const [index, name, details, start, end, owner] = parts;
+          timelineData.push([
+            index.trim(),
+            name.replace(/"/g, "").trim(),
+            start.trim(),
+            end.trim(),
+            details.replace(/"/g, "").trim(),
+            owner.replace(/"/g, "").trim()
+          ]);
+        }
+        drawChart();
+        renderTaskList();
+      })
+      .catch(err => {
+        console.error("โหลดไฟล์ CSV ไม่ได้:", err);
+        alert("ไม่พบไฟล์ data.csv หรือเกิดข้อผิดพลาดในการโหลดข้อมูล");
       });
-    }
+  }
 
-    function drawChart() {
-      const container = document.getElementById("timeline");
-      const chart = new google.visualization.Timeline(container);
-      const dataTable = new google.visualization.DataTable();
+  function drawChart() {
+    const container = document.getElementById("timeline");
+    container.style.height = (timelineData.length * 50 + 80) + "px";
 
-      dataTable.addColumn({ type: "string", id: "Owner" });
-      dataTable.addColumn({ type: "string", id: "Task" });
-      dataTable.addColumn({ type: "date", id: "Start" });
-      dataTable.addColumn({ type: "date", id: "End" });
+    dataTable.removeRows(0, dataTable.getNumberOfRows());
 
-      taskData.forEach(task => {
-        dataTable.addRow([
-          task.owner,
-          task.title,
-          task.start,
-          task.end
-        ]);
-      });
+    timelineData.forEach(row => {
+      const [index, name, start, end, details, owner] = row;
+      const steps = details.split(",").map(s => `<li>${s.trim()}</li>`).join("");
+      const tooltip = `
+        <div style="padding:10px;font-size:14px;">
+          <strong>📌 ชื่องาน:</strong> ${name}<br/>
+          <strong>👤 เจ้าของงาน:</strong> ${owner}<br/>
+          <strong>📋 รายละเอียด:</strong>
+          <ol style="margin:5px 0 0 15px;">${steps}</ol>
+        </div>`;
+      const displayName = `${index}. ${name}`;
+      dataTable.addRow([displayName, tooltip, new Date(start), new Date(end)]);
+    });
 
-      const options = {
-        timeline: { showRowLabels: true },
-        avoidOverlappingGridLines: false,
-        backgroundColor: "transparent"
-      };
+    chart.draw(dataTable, { tooltip: { isHtml: true } });
+  }
 
-      chart.draw(dataTable, options);
-    }
-  </script>
+  function renderTaskList() {
+    const container = document.getElementById("taskList");
+    container.innerHTML = "";
+    timelineData.forEach(row => {
+      const [index, name, start, end, details, owner] = row;
+      const div = document.createElement("div");
+      div.className = "task-item";
+      div.innerHTML = `
+        <strong>🔢 ${index}</strong><br/>
+        🛠️ <strong>${name}</strong><br/>
+        📅 ${start} - ${end}<br/>
+        👤 ${owner}<br/>
+        📋 ${details}
+      `;
+      container.appendChild(div);
+    });
+  }
+</script>
+
 </body>
 </html>
